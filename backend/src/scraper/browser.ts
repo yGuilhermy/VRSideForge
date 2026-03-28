@@ -9,6 +9,17 @@ let browser: Browser | null = null;
 let activePage: Page | null = null;
 
 export async function launchBrowser(headless: boolean = true) {
+  // If browser exists but headless mode doesn't match requested mode, close it and restart
+  if (browser) {
+    // There isn't a direct way to check headless status of a running browser easily via Puppeteer API
+    // but we can trust the call origin. For simplicity, we just check if it's already there.
+    // However, if we want to FORCE non-headless for manual login:
+    if (!headless && (browser as any)._process?.spawnargs.includes('--headless')) {
+        console.log('[Browser] Restarting browser in non-headless mode...');
+        await closeBrowser();
+    }
+  }
+
   if (!browser) {
     browser = await puppeteer.launch({
       headless,
@@ -28,7 +39,7 @@ export async function closeBrowser() {
   }
 }
 
-export async function getPage(url?: string, useNewTab: boolean = false): Promise<Page> {
+export async function getPage(url?: string, useNewTab: boolean = false, skipCookies: boolean = false): Promise<Page> {
   const b = await launchBrowser();
   let page: Page;
   
@@ -42,25 +53,31 @@ export async function getPage(url?: string, useNewTab: boolean = false): Promise
     page = activePage;
   }
   
-  // load cookies only if page is fresh or we need to ensure session
-  const cookiesOnPage = await page.cookies();
-  if (cookiesOnPage.length === 0) {
+  if (!skipCookies) {
+    // Always try to load cookies from DB to reflect recent logins
     const db = getDb();
     const session = await db.get('SELECT cookies FROM session WHERE id = 1');
     if (session && session.cookies) {
-      const cookies = JSON.parse(session.cookies);
-      await page.setCookie(...cookies);
+      try {
+        const cookies = JSON.parse(session.cookies);
+        if (Array.isArray(cookies) && cookies.length > 0) {
+          await page.setCookie(...cookies).catch(e => console.warn('[Browser] Error setting cookies:', e.message));
+        }
+      } catch (e) {
+        console.warn('[Browser] Failed to parse session cookies');
+      }
     }
   }
 
   if (url) {
     try {
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+      // Faster navigation: domcontentloaded is usually enough for scraping logic
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     } catch (e: any) {
       console.warn(`[Browser] Navigation warning for ${url}: ${e.message}`);
-      // Try again once if it's a timeout
+      // Try again with different wait if it timed out
       if (e.message.includes('timeout')) {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto(url, { waitUntil: 'load', timeout: 15000 }).catch(() => {});
       }
     }
   }

@@ -56,6 +56,22 @@ export default function AuthModal({ open, onOpenChange }: { open: boolean, onOpe
     }
   });
 
+  const manualLoginMutation = useMutation({
+    mutationFn: () => api.get('/session/validate'),
+    onSuccess: (res) => {
+      if (res.data.success) {
+        toast.success('Autenticado com sucesso via navegador!');
+        onOpenChange(false);
+        queryClient.invalidateQueries({ queryKey: ['sessionValid'] });
+      } else {
+        toast.error(res.data.message || 'Falha na autenticação manual');
+      }
+    },
+    onError: () => {
+      toast.error('Erro ao abrir o navegador de autenticação');
+    }
+  });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorVisible(null);
@@ -65,7 +81,6 @@ export default function AuthModal({ open, onOpenChange }: { open: boolean, onOpe
       captchaCode: captchaInfo ? captchaCode : undefined,
       captchaSid: captchaInfo ? captchaInfo.captchaSid : undefined,
       captchaField: captchaInfo ? captchaInfo.captchaField : undefined,
-      pendingCookies: captchaInfo ? captchaInfo.pendingCookies : undefined,
     });
   };
 
@@ -145,14 +160,28 @@ export default function AuthModal({ open, onOpenChange }: { open: boolean, onOpe
           )}
 
           <div className="flex flex-col gap-3 pt-2">
-            <Button type="submit" className="w-full font-bold shadow-lg shadow-primary/10" disabled={loginMutation.isPending}>
+            <Button type="submit" className="w-full font-bold shadow-lg shadow-primary/10" disabled={loginMutation.isPending || manualLoginMutation.isPending}>
               {loginMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   {captchaInfo ? 'Validando Captcha...' : 'Autenticando...'}
                 </>
               ) : (
-                captchaInfo ? 'Confirmar Captcha' : 'Realizar Login'
+                captchaInfo ? 'Confirmar Captcha' : 'Autenticação em Segundo Plano'
+              )}
+            </Button>
+
+            <Button 
+              type="button" 
+              variant="outline"
+              className="w-full font-semibold border-primary/30 hover:bg-primary/10"
+              onClick={() => manualLoginMutation.mutate()}
+              disabled={loginMutation.isPending || manualLoginMutation.isPending}
+            >
+              {manualLoginMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Aguardando Login...</>
+              ) : (
+                <>Abrir Navegador (Login Manual)</>
               )}
             </Button>
             

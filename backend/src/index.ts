@@ -241,14 +241,22 @@ app.get('/api/session/validate', async (req, res) => {
   try {
     const browser = await launchBrowser(false); // non-headless
     const page = await browser.newPage();
-    await page.goto('https://rutracker.me/forum/login.php', { waitUntil: 'networkidle2' });
+    await page.goto('https://rutracker.me/forum/login.php', { waitUntil: 'domcontentloaded' });
+    console.log('[Auth] Opening browser window for manual login. Waiting for user...');
     
     // We wait for the user to login manually. They will be redirected to profile or index
     let loggedIn = false;
-    for (let i = 0; i < 60; i++) { // Wait up to 60 seconds
-      if (page.isClosed()) break;
+    for (let i = 0; i < 180; i++) { // Increase wait to 3 minutes
+      if (page.isClosed()) {
+        console.log('[Auth] Browser window closed by user.');
+        break;
+      }
       const url = page.url();
-      if (!url.includes('login.php')) {
+      const content = await page.content().catch(() => '');
+      
+      // Detection of success: URL changed or logout link visible
+      if (!url.includes('login.php') && (content.includes('logout') || content.includes('Выход') || content.includes('profile.php'))) {
+        console.log('[Auth] Manual login detected! Saving cookies.');
         await saveCookies(page);
         loggedIn = true;
         break;
@@ -271,11 +279,12 @@ app.get('/api/session/validate', async (req, res) => {
 
 /** Background Auth Route */
 app.post('/api/auth/login', async (req, res) => {
-  const { username, password, captchaCode, captchaSid, captchaField, pendingCookies } = req.body;
+  const { username, password, captchaCode, captchaSid, captchaField } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and Password required' });
+  console.log(`[API] Login request for: ${username} (Has Captcha: ${!!captchaCode})`);
 
   try {
-    const result = await loginToRutracker(username, password, captchaCode, captchaSid, captchaField, pendingCookies);
+    const result = await loginToRutracker(username, password, captchaCode, captchaSid, captchaField);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
