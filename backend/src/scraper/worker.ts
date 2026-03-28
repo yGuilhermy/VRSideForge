@@ -123,8 +123,13 @@ export async function extractPostDetails(url: string, useNewTab: boolean = false
   else tags.push('VR');
 
   let size = 'Unknown';
-  const sizeMatch = description.match(/Размер:\s*([\d\.]+\s*(GB|MB))/i);
-  if (sizeMatch) size = sizeMatch[1];
+  const sizeFromElem = $('#tor-size-humn').text().trim();
+  if (sizeFromElem) {
+    size = sizeFromElem.replace(/&nbsp;|\s+/g, ' ');
+  } else {
+    const sizeMatch = description.match(/Размер:\s*([\d\.]+\s*(GB|MB|KB))/i);
+    if (sizeMatch) size = sizeMatch[1];
+  }
 
   // Stats (Improved Selector/Regex)
   const statsTable = $('#t-tor-stats');
@@ -223,6 +228,7 @@ export async function startScraper() {
 
     const baseQueries = [
       { name: 'Oculos Quests games', url: 'https://rutracker.me/forum/tracker.php?f=2420' },
+      { name: 'Deep Archive (All Quest)', url: 'https://rutracker.me/forum/viewforum.php?f=2420' },
       { name: 'Quest 3S', url: 'https://rutracker.me/forum/tracker.php?f=2420&nm=Quest+3S' },
       { name: 'VR Meta Quest', url: 'https://rutracker.me/forum/tracker.php?f=2420&nm=VR+Meta+Quest' },
       { name: 'Quest 3', url: 'https://rutracker.me/forum/tracker.php?f=2420&nm=Quest+3' },
@@ -249,13 +255,37 @@ export async function startScraper() {
         const content = await page.content();
         const $ = cheerio.load(content);
 
-        const rows = $('#tor-tbl tr.tCenter, tr.tCenter');
-        console.log(`[List] Found ${rows.length} rows.`);
+        const isTracker = forumUrl.includes('tracker.php');
+        const rawItems: { link: string; size: string }[] = [];
 
-        const nextBtn = $('a.pg').filter((_, el) => $(el).text().includes('След'));
+        if (isTracker) {
+          const rows = $('#tor-tbl tr.tCenter, tr.tCenter');
+          console.log(`[List] Found ${rows.length} rows in tracker.`);
+          rows.each((_, el) => {
+            const link = $(el).find('a.tLink').attr('href');
+            const size = $(el).find('a.tr-dl').text().replace('↓', '').trim();
+            if (link) {
+              const fullUrl = link.startsWith('http') ? link : `https://rutracker.me/forum/${link}`;
+              rawItems.push({ link: fullUrl, size });
+            }
+          });
+        } else {
+          // viewforum.php logic
+          const topicLinks = $('a.torTopic');
+          console.log(`[List] Found ${topicLinks.length} topics in forum view.`);
+          topicLinks.each((_, el) => {
+            const link = $(el).attr('href');
+            if (link) {
+              const fullUrl = link.startsWith('http') ? link : `https://rutracker.me/forum/${link}`;
+              rawItems.push({ link: fullUrl, size: 'Unknown' });
+            }
+          });
+        }
+
+        const nextBtn = $('a.pg, a.p-next').filter((_, el) => $(el).text().includes('След'));
         const hasNext = nextBtn.length > 0;
 
-        if (rows.length === 0) {
+        if (rawItems.length === 0) {
           if ($('#login-box').length > 0 || content.includes('login.php')) {
             console.log(`[!] Auth required for ${query.name}. Stopping.`);
             captchaRequested = true;
@@ -263,18 +293,6 @@ export async function startScraper() {
           hasNextPage = false;
           break;
         }
-
-        const rawItems: { link: string; size: string }[] = [];
-        rows.each((_, el) => {
-          const link = $(el).find('a.tLink').attr('href');
-          const size = $(el).find('a.tr-dl').text().replace('↓', '').trim();
-          if (link) {
-            const fullUrl = link.startsWith('http') ? link : `https://rutracker.me/forum/${link}`;
-            rawItems.push({ link: fullUrl, size });
-          }
-        });
-
-        // Filter out existing
         const itemsToProcess: { link: string; size: string }[] = [];
         for (const item of rawItems) {
           const exists = await db.get('SELECT id FROM games WHERE post_url = ?', [item.link]);

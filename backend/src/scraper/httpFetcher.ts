@@ -134,8 +134,13 @@ export async function fetchPostDetailsHttp(url: string, retries = 3) {
   else tags.push('VR');
 
   let size = 'Unknown';
-  const sizeMatch = description.match(/Размер:\s*([\d\.]+\s*(GB|MB))/i);
-  if (sizeMatch) size = sizeMatch[1];
+  const sizeFromElem = $('#tor-size-humn').text().trim();
+  if (sizeFromElem) {
+    size = sizeFromElem.replace(/&nbsp;|\s+/g, ' ');
+  } else {
+    const sizeMatch = description.match(/Размер:\s*([\d\.]+\s*(GB|MB|KB|GB|MB|KB))/i);
+    if (sizeMatch) size = sizeMatch[1];
+  }
 
   const statsTable = $('#t-tor-stats');
   let seeds = parseInt($('span.seed b').text()) || 0;
