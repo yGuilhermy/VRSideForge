@@ -14,10 +14,12 @@ import { Loader2, KeyRound, ServerOff, Database, Bot, RefreshCcw, LogIn, StopCir
 import { toast } from 'sonner';
 
 import AdminPanel from '@/components/AdminPanel';
+import AuthModal from '@/components/AuthModal';
 
 export default function Settings() {
   const queryClient = useQueryClient();
   const { offlineMode, setOfflineMode, downloadPath, setDownloadPath } = useStore();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const { data: sessionData, isLoading: sessionLoading } = useQuery<{ valid: boolean }>({
     queryKey: ['sessionValid'],
@@ -115,13 +117,12 @@ export default function Settings() {
           </CardContent>
           <CardFooter>
             <Button 
-              onClick={() => authMutation.mutate()} 
-              disabled={authMutation.isPending}
+              onClick={() => setAuthModalOpen(true)} 
               variant={sessionData?.valid ? 'secondary' : 'default'}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto font-bold shadow-sm"
             >
-              {authMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <LogIn className="h-4 w-4 mr-2" />}
-              {sessionData?.valid ? 'Re-autenticar' : 'Iniciar Autenticação'}
+              <LogIn className="h-4 w-4 mr-2" />
+              {sessionData?.valid ? 'Re-autenticar' : 'Fazer Login (Background)'}
             </Button>
           </CardFooter>
         </Card>
@@ -254,6 +255,7 @@ export default function Settings() {
       </Card>
       
       <AdminPanel />
+      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );
 }

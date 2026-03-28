@@ -14,6 +14,7 @@ import { launchBrowser, closeBrowser, saveCookies } from './scraper/browser';
 import { translateText } from './utils/translate';
 import { startScraper, stopScraper, getStatus, submitCaptcha, updateGame, retryFailedGame, retryAllFailedGames } from './scraper/worker';
 import { initDb, getDb, closeDb } from './db/sqlite';
+import { loginToRutracker } from './scraper/auth';
 import {
   getAdbDevices,
   getInstalledApps,
@@ -263,6 +264,19 @@ app.get('/api/session/validate', async (req, res) => {
     
     await closeBrowser();
     res.json({ success: false, message: 'Login timeout or failed' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** Background Auth Route */
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password, captchaCode, captchaSid, captchaField, pendingCookies } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and Password required' });
+
+  try {
+    const result = await loginToRutracker(username, password, captchaCode, captchaSid, captchaField, pendingCookies);
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
