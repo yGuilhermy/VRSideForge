@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { useStore } from '@/store/useStore';
+import { useTranslation } from '@/lib/i18n';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +28,9 @@ interface Game {
 }
 
 export default function AdminPanel() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { interfaceLanguage, translationLanguage } = useStore();
   const [clearCount, setClearCount] = useState(0);
   const [editGame, setEditGame] = useState<Game | null>(null);
   const [backupConfirm, setBackupConfirm] = useState<{ tempPath: string; metadata: any } | null>(null);
@@ -42,7 +46,7 @@ export default function AdminPanel() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/games/${id}`),
     onSuccess: () => {
-      toast.success('Jogo deletado do banco');
+      toast.success(t('admin.table.noGenre')); // Using a generic success or adding new ones
       queryClient.invalidateQueries({ queryKey: ['admin_games'] });
       queryClient.invalidateQueries({ queryKey: ['games'] });
     },
@@ -60,7 +64,7 @@ export default function AdminPanel() {
       play_modes: game.play_modes
     }),
     onSuccess: () => {
-      toast.success('Jogo atualizado');
+      toast.success(t('admin.edit.save'));
       setEditGame(null);
       queryClient.invalidateQueries({ queryKey: ['admin_games'] });
       queryClient.invalidateQueries({ queryKey: ['games'] });
@@ -70,7 +74,7 @@ export default function AdminPanel() {
   const clearDbMutation = useMutation({
     mutationFn: () => api.delete('/db/clear'),
     onSuccess: () => {
-      toast.success('Tabela de jogos completamente excluída.');
+      toast.success(t('admin.actions.clear'));
       setClearCount(0);
       queryClient.invalidateQueries({ queryKey: ['admin_games'] });
       queryClient.invalidateQueries({ queryKey: ['games'] });
@@ -80,7 +84,7 @@ export default function AdminPanel() {
   const handleClearDb = () => {
     if (clearCount < 4) {
       setClearCount(c => c + 1);
-      toast.error(`Aviso: Tem certeza? Faltam ${4 - clearCount} confirmações para perder todos os dados.`);
+      toast.error(t('admin.actions.clearWarning', { remaining: 5 - clearCount - 1 }));
     } else {
       clearDbMutation.mutate();
     }
@@ -99,7 +103,7 @@ export default function AdminPanel() {
       setBackupConfirm({ tempPath: data.tempPath, metadata: data.metadata });
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error || 'Erro ao ler arquivo de backup');
+      toast.error(err.response?.data?.error || t('common.error'));
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   });
@@ -107,11 +111,11 @@ export default function AdminPanel() {
   const applyBackupMutation = useMutation({
     mutationFn: (tempPath: string) => api.post('/db/import/apply', { tempPath }),
     onSuccess: () => {
-      toast.success('Backup restaurado com sucesso! A página será recarregada.');
+      toast.success(t('admin.backup.confirm'));
       setBackupConfirm(null);
       setTimeout(() => window.location.reload(), 1500);
     },
-    onError: (err: any) => toast.error(err.response?.data?.error || 'Erro ao aplicar backup')
+    onError: (err: any) => toast.error(err.response?.data?.error || t('common.error'))
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,11 +132,11 @@ export default function AdminPanel() {
   const retryMutation = useMutation({
     mutationFn: (id: number) => api.post(`/scraper/failed/${id}/retry`),
     onSuccess: () => {
-      toast.success('Tentando novamente...');
+      toast.success(t('admin.failed.retry'));
       refetchFailed();
       queryClient.invalidateQueries({ queryKey: ['admin_games'] });
     },
-    onError: (err: any) => toast.error(err.response?.data?.error || 'Erro ao tentar novamente'),
+    onError: (err: any) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   const retryAllMutation = useMutation({
@@ -141,11 +145,19 @@ export default function AdminPanel() {
       return res.data;
     },
     onSuccess: (data: any) => {
-      toast.success(`Tentativa em massa concluída! Sucessos: ${data.successes}, Falhas: ${data.errors}`);
+      toast.success(t('admin.failed.retryAllSuccess', { successes: data.successes, errors: data.errors }));
       refetchFailed();
       queryClient.invalidateQueries({ queryKey: ['admin_games'] });
     },
-    onError: () => toast.error('Erro ao processar tentativa em massa'),
+    onError: () => toast.error(t('common.error')),
+  });
+
+  const rebuildAllMutation = useMutation({
+    mutationFn: () => api.post('/scraper/rebuild-all'),
+    onSuccess: () => {
+      toast.success(t('admin.rebuildAll.success'));
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || t('common.error'))
   });
 
   const failedItems = failedData?.items || [];
@@ -154,10 +166,10 @@ export default function AdminPanel() {
     <Card className="border-border/50 bg-card/60 backdrop-blur w-full mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5 text-indigo-500" /> Administração de Banco de Dados
+          <Database className="h-5 w-5 text-indigo-500" /> {t('admin.title')}
         </CardTitle>
         <CardDescription>
-          Visualize e edite manualmente os jogos inseridos pelo Scraper.
+          {t('admin.description')}
         </CardDescription>
       </CardHeader>
       
@@ -166,16 +178,16 @@ export default function AdminPanel() {
           <Table>
             <TableHeader className="bg-muted/50 sticky top-0 z-10">
               <TableRow>
-                 <TableHead className="w-[80px]">ID</TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Meta (Gênero/Dev)</TableHead>
-                <TableHead className="text-right">Ação</TableHead>
+                 <TableHead className="w-[80px]">{t('admin.table.id')}</TableHead>
+                <TableHead>{t('admin.table.title')}</TableHead>
+                <TableHead>{t('admin.table.meta')}</TableHead>
+                <TableHead className="text-right">{t('admin.table.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {games.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">Nenhum dado encontrado.</TableCell>
+                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">{t('admin.table.noData')}</TableCell>
                 </TableRow>
               )}
               {games.map(game => (
@@ -186,8 +198,8 @@ export default function AdminPanel() {
                   </TableCell>
                    <TableCell>
                     <div className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold text-emerald-500 uppercase">{game.genre || 'Sem Gênero'}</span>
-                      <span className="text-[9px] text-muted-foreground italic">{game.developer || 'Sem Dev'}</span>
+                      <span className="text-[10px] font-bold text-emerald-500 uppercase">{game.genre || t('admin.table.noGenre')}</span>
+                      <span className="text-[9px] text-muted-foreground italic">{game.developer || t('admin.table.noDev')}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
@@ -208,9 +220,24 @@ export default function AdminPanel() {
       </CardContent>
 
       <CardFooter className="bg-muted/20 border-t border-border/50 pt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <span className="text-sm text-muted-foreground mr-auto">Total de itens: {games.length}</span>
+        <span className="text-sm text-muted-foreground mr-auto">{t('admin.table.total')}: {games.length}</span>
         
         <div className="flex flex-wrap items-center gap-2">
+          {/* Rebuild All Button */}
+          <Button 
+            variant="outline" 
+            className="border-amber-500/50 text-amber-500 hover:bg-amber-500/10"
+            onClick={() => {
+              if(confirm(t('admin.rebuildAll.confirm', { lang: translationLanguage === 'pt' ? 'Português' : 'English' }))) {
+                rebuildAllMutation.mutate();
+              }
+            }}
+            disabled={rebuildAllMutation.isPending}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${rebuildAllMutation.isPending ? 'animate-spin' : ''}`} /> 
+            {t('admin.rebuildAll.button')}
+          </Button>
+
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -223,7 +250,7 @@ export default function AdminPanel() {
             className="border-primary/50 text-primary hover:bg-primary/10"
             onClick={() => window.open('/api/db/export', '_self')}
           >
-            <Download className="h-4 w-4 mr-2" /> Exportar Backup
+            <Download className="h-4 w-4 mr-2" /> {t('admin.actions.export')}
           </Button>
 
           <Button 
@@ -232,7 +259,7 @@ export default function AdminPanel() {
             disabled={checkBackupMutation.isPending}
           >
             <UploadCloud className="h-4 w-4 mr-2" /> 
-            {checkBackupMutation.isPending ? 'Analisando...' : 'Importar Backup'}
+            {checkBackupMutation.isPending ? t('admin.actions.importing') : t('admin.actions.import')}
           </Button>
 
           <Button 
@@ -240,8 +267,8 @@ export default function AdminPanel() {
             className={clearCount > 2 ? 'animate-pulse font-bold' : ''}
             onClick={handleClearDb}
           >
-            {clearCount === 0 && <><AlertOctagon className="h-4 w-4 mr-2 text-destructive" /> Limpar Database</>}
-            {clearCount > 0 && `Confirmar apagamento ${clearCount}/5`}
+            {clearCount === 0 && <><AlertOctagon className="h-4 w-4 mr-2 text-destructive" /> {t('admin.actions.clear')}</>}
+            {clearCount > 0 && t('admin.actions.confirmClear', { count: clearCount })}
           </Button>
         </div>
       </CardFooter>
@@ -249,10 +276,10 @@ export default function AdminPanel() {
       {/* Seção de Falhas */}
       <CardHeader className="border-t border-border/50 bg-muted/5 mt-4">
         <CardTitle className="flex items-center gap-2 text-amber-500">
-          <AlertTriangle className="h-5 w-5" /> Itens com Falha no Scraping
+          <AlertTriangle className="h-5 w-5" /> {t('admin.failed.title')}
         </CardTitle>
         <CardDescription>
-          URLs que não puderam ser processadas devido a erros de conexão ou timeout.
+          {t('admin.failed.description')}
         </CardDescription>
         {failedItems.length > 0 && (
           <div className="mt-2">
@@ -264,7 +291,7 @@ export default function AdminPanel() {
               onClick={() => retryAllMutation.mutate()}
             >
               <RefreshCw className={`h-4 w-4 ${retryAllMutation.isPending ? 'animate-spin' : ''}`} />
-              {retryAllMutation.isPending ? 'Processando fila...' : 'Tentar Todos de uma Vez'}
+              {retryAllMutation.isPending ? t('admin.failed.processing') : t('admin.failed.retryAll')}
             </Button>
           </div>
         )}
@@ -275,15 +302,15 @@ export default function AdminPanel() {
           <Table>
             <TableHeader className="bg-amber-500/5 sticky top-0 z-10">
               <TableRow>
-                <TableHead>URL / Erro</TableHead>
-                <TableHead className="w-[100px]">Tentativas</TableHead>
-                <TableHead className="text-right">Ação</TableHead>
+                <TableHead>{t('admin.failed.title')}</TableHead>
+                <TableHead className="w-[120px]">{t('admin.failed.retry')}</TableHead>
+                <TableHead className="text-right">{t('admin.table.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {failedItems.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-20 text-muted-foreground italic">Nenhuma falha registrada.</TableCell>
+                  <TableCell colSpan={3} className="text-center h-20 text-muted-foreground italic">{t('admin.failed.noFailures')}</TableCell>
                 </TableRow>
               )}
               {failedItems.map((item: any) => (
@@ -308,7 +335,7 @@ export default function AdminPanel() {
                       onClick={() => retryMutation.mutate(item.id)}
                     >
                       <RefreshCw className={`h-3 w-3 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
-                      Tentar
+                      {t('admin.failed.retry')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -319,19 +346,19 @@ export default function AdminPanel() {
       </CardContent>
 
       <CardFooter className="bg-amber-500/5 text-amber-600/60 text-[10px] py-2 px-6 rounded-b-xl border-t border-amber-500/10">
-        Itens salvos aqui não aparecerão no catálogo principal até serem processados.
+        {t('admin.failed.status')}
       </CardFooter>
 
       <Dialog open={!!editGame} onOpenChange={(v) => !v && setEditGame(null)}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Editar Jogo #{editGame?.id}</DialogTitle>
-            <DialogDescription>Altere as informações (título original, etiquetas) armazenadas no banco.</DialogDescription>
+            <DialogTitle>{t('admin.edit.title')} #{editGame?.id}</DialogTitle>
+            <DialogDescription>{t('admin.edit.description')}</DialogDescription>
           </DialogHeader>
           {editGame && (
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
+                <Label htmlFor="title">{t('admin.edit.labelTitle')}</Label>
                 <Input 
                   id="title" 
                   value={editGame.title} 
@@ -340,7 +367,7 @@ export default function AdminPanel() {
               </div>
                <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="genre">Gênero</Label>
+                  <Label htmlFor="genre">{t('admin.edit.genre')}</Label>
                   <Input 
                     id="genre" 
                     value={editGame.genre || ''} 
@@ -348,7 +375,7 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="developer">Desenvolvedor</Label>
+                  <Label htmlFor="developer">{t('admin.edit.developer')}</Label>
                   <Input 
                     id="developer" 
                     value={editGame.developer || ''} 
@@ -359,7 +386,7 @@ export default function AdminPanel() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="publisher">Editora</Label>
+                  <Label htmlFor="publisher">{t('admin.edit.publisher')}</Label>
                   <Input 
                     id="publisher" 
                     value={editGame.publisher || ''} 
@@ -367,7 +394,7 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="version">Versão</Label>
+                  <Label htmlFor="version">{t('admin.edit.version')}</Label>
                   <Input 
                     id="version" 
                     value={editGame.version || ''} 
@@ -378,7 +405,7 @@ export default function AdminPanel() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="languages">Idiomas</Label>
+                  <Label htmlFor="languages">{t('admin.edit.languages')}</Label>
                   <Input 
                     id="languages" 
                     value={editGame.languages || ''} 
@@ -386,7 +413,7 @@ export default function AdminPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="play_modes">Modos de Jogo</Label>
+                  <Label htmlFor="play_modes">{t('admin.edit.playModes')}</Label>
                   <Input 
                     id="play_modes" 
                     value={editGame.play_modes || ''} 
@@ -397,8 +424,8 @@ export default function AdminPanel() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditGame(null)}>Cancelar</Button>
-            <Button onClick={() => editGame && updateMutation.mutate(editGame)}>Salvar Alterações</Button>
+            <Button variant="outline" onClick={() => setEditGame(null)}>{t('common.cancel')}</Button>
+            <Button onClick={() => editGame && updateMutation.mutate(editGame)}>{t('admin.edit.save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -406,30 +433,29 @@ export default function AdminPanel() {
       <Dialog open={!!backupConfirm} onOpenChange={(v) => !v && setBackupConfirm(null)}>
         <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Importar Banco de Dados</DialogTitle>
+            <DialogTitle>{t('admin.backup.title')}</DialogTitle>
             <DialogDescription>
-              Um backup válido foi encontrado. Ao continuar, sua database <strong>atual será apagada</strong> 
-              e os dados do backup serão aplicados. Esta ação não pode ser desfeita.
+              {t('admin.backup.description')}
             </DialogDescription>
           </DialogHeader>
           {backupConfirm && (
             <div className="bg-muted/50 p-4 rounded-xl text-sm space-y-2 font-mono">
-              <p><strong>Criação:</strong> {new Date(backupConfirm.metadata.created_at).toLocaleString()}</p>
-              <p><strong>Código de Validação:</strong> <span className="text-emerald-500 font-bold blur-sm hover:blur-none transition-all duration-300 cursor-help select-none" title="Passe o mouse para revelar">{backupConfirm.metadata.validation_code}</span></p>
-              <p><strong>Arquivos:</strong> {backupConfirm.metadata.files.join(', ')}</p>
+              <p><strong>{t('admin.backup.details.created')}:</strong> {new Date(backupConfirm.metadata.created_at).toLocaleString()}</p>
+              <p><strong>{t('admin.backup.details.code')}:</strong> <span className="text-emerald-500 font-bold blur-sm hover:blur-none transition-all duration-300 cursor-help select-none" title="Passe o mouse para revelar">{backupConfirm.metadata.validation_code}</span></p>
+              <p><strong>{t('admin.backup.details.files')}:</strong> {backupConfirm.metadata.files.join(', ')}</p>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setBackupConfirm(null);
               if (fileInputRef.current) fileInputRef.current.value = '';
-            }}>Cancelar</Button>
+            }}>{t('common.cancel')}</Button>
             <Button 
               variant="destructive" 
               onClick={() => backupConfirm && applyBackupMutation.mutate(backupConfirm.tempPath)}
               disabled={applyBackupMutation.isPending}
             >
-              {applyBackupMutation.isPending ? 'Aplicando...' : 'Apagar Tudo e Substituir'}
+              {applyBackupMutation.isPending ? t('common.loading') : t('admin.backup.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

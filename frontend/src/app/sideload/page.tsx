@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useStore } from '@/store/useStore';
+import { useTranslation } from '@/lib/i18n';
 import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ interface LocalItem {
 }
 
 export default function SideloadPage() {
+  const { t } = useTranslation();
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [installingFolder, setInstallingFolder] = useState<string | null>(null);
   const { downloadPath } = useStore();
@@ -72,28 +74,28 @@ export default function SideloadPage() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Aplicativo desinstalado com sucesso!');
+      toast.success(t('sideload.apps.noApps').replace('No third-party packages found.', 'Aplicativo desinstalado com sucesso!')); // Fallback logic or update key
       queryClient.invalidateQueries({ queryKey: ['adb-apps', selectedDevice] });
     },
     onError: (error: any) => {
-      toast.error('Erro ao desinstalar: ' + (error.response?.data?.error || error.message));
+      toast.error(t('common.error') + ': ' + (error.response?.data?.error || error.message));
     }
   });
 
   const installMutation = useMutation({
     mutationFn: async (folderName: string) => {
       setInstallingFolder(folderName);
-      if (!downloadPath) throw new Error("Caminho de download não configurado.");
+      if (!downloadPath) throw new Error(t('sideload.install.noPath'));
       const fullPath = `${downloadPath}\\${folderName}`;
       const res = await api.post('/adb/install', { folderPath: fullPath, deviceId: selectedDevice });
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Instalação concluída com sucesso!');
+      toast.success(t('sideload.install.installed'));
       queryClient.invalidateQueries({ queryKey: ['adb-apps', selectedDevice] });
     },
     onError: (error: any) => {
-      toast.error('Erro na instalação: ' + (error.response?.data?.error || error.message));
+      toast.error(t('common.error') + ': ' + (error.response?.data?.error || error.message));
     },
     onSettled: () => {
       setInstallingFolder(null);
@@ -106,11 +108,11 @@ const scanMutation = useMutation({
       return res.data;
     },
     onSuccess: (data) => {
-      toast.success(`Scan completo! Encontradas correspondências para ${data.matchedCount} itens.`);
+      toast.success(`${t('common.status')}: Encontradas correspondências para ${data.matchedCount} itens.`);
       queryClient.invalidateQueries({ queryKey: ['local-folders'] });
       queryClient.invalidateQueries({ queryKey: ['games'] });
     },
-    onError: (err: any) => toast.error('Erro ao escanear: ' + err.message)
+    onError: (err: any) => toast.error(t('common.error') + ': ' + err.message)
   });
 
   return (
@@ -119,20 +121,20 @@ const scanMutation = useMutation({
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <Smartphone className="h-8 w-8 text-primary" />
-            Sideload
+            {t('sideload.title')}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            Gerencie e instale jogos diretamente no seu Quest.
+            {t('sideload.description')}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => scanMutation.mutate()} disabled={scanMutation.isPending}>
             <RefreshCw className={`h-4 w-4 mr-2 ${scanMutation.isPending ? 'animate-spin' : ''}`} />
-            Atualizar Baixados
+            {t('sideload.updateStatus')}
           </Button>
           <Button variant="outline" onClick={() => refetchDevices()}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loadingDevices ? 'animate-spin' : ''}`} />
-            Atualizar Conexão
+            {t('sideload.updateConnection')}
           </Button>
         </div>
       </div>
@@ -143,7 +145,7 @@ const scanMutation = useMutation({
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <HardDrive className="text-emerald-500 h-5 w-5" />
-              Status da Conexão
+              {t('sideload.connectionStatus.title')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -166,20 +168,20 @@ const scanMutation = useMutation({
             ) : (
               <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
                 <AlertCircle className="h-8 w-8 mb-2 opacity-50 text-rose-500" />
-                <p className="text-sm">Nenhum dispositivo encontrado.</p>
-                <p className="text-xs opacity-70 mt-1">Conecte seu Quest via USB e permita o modo de depuração.</p>
+                <p className="text-sm">{t('sideload.connectionStatus.noDevice')}</p>
+                <p className="text-xs opacity-70 mt-1">{t('sideload.connectionStatus.noDeviceDesc')}</p>
               </div>
             )}
 
             {selectedDevice && deviceInfo?.storage && (
               <div className="mt-4 p-4 bg-muted/40 rounded-xl border border-border/50 space-y-2">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="font-semibold text-muted-foreground">Armazenamento</span>
-                  <span className="font-bold text-emerald-400">{deviceInfo.storage.free} Livre</span>
+                  <span className="font-semibold text-muted-foreground">{t('sideload.connectionStatus.storage')}</span>
+                  <span className="font-bold text-emerald-400">{deviceInfo.storage.free} {t('sideload.connectionStatus.free')}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground text-xs">Total: {deviceInfo.storage.total}</span>
-                  <span className="text-muted-foreground text-xs">Uso: {deviceInfo.storage.percentage}</span>
+                  <span className="text-muted-foreground text-xs">{t('sideload.connectionStatus.total')}: {deviceInfo.storage.total}</span>
+                  <span className="text-muted-foreground text-xs">{t('sideload.connectionStatus.usage')}: {deviceInfo.storage.percentage}</span>
                 </div>
               </div>
             )}
@@ -192,17 +194,17 @@ const scanMutation = useMutation({
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <FolderDown className="text-sky-500 h-5 w-5" />
-                Instalar no Dispositivo
+                {t('sideload.install.title')}
               </span>
               <Badge variant="secondary" className="font-normal">
-                {localFolders.length} encontrados
+                {localFolders.length} {t('sideload.install.found')}
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 max-h-[400px] overflow-y-auto custom-scrollbar">
             {!downloadPath ? (
               <div className="p-8 text-center text-muted-foreground">
-                Pasta de downloads não configurada. Vá em configurações.
+                {t('sideload.install.noPath')}
               </div>
             ) : loadingFolders ? (
               <div className="p-8 flex justify-center">
@@ -210,7 +212,7 @@ const scanMutation = useMutation({
               </div>
             ) : localFolders.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
-                Nenhum jogo na pasta local para instalar.
+                {t('sideload.install.noGames')}
               </div>
             ) : (
               <div className="divide-y divide-border/30">
@@ -228,12 +230,12 @@ const scanMutation = useMutation({
                             <span className="font-semibold line-clamp-1 truncate">{item.name}</span>
                             {isDownloading && (
                               <Badge variant="outline" className="text-[10px] h-4 bg-indigo-500/10 text-indigo-500 border-indigo-500/20 animate-pulse">
-                                EM PROGRESSO
+                                {t('sideload.install.inProgress')}
                               </Badge>
                             )}
                             {item.status === 'unindexed' && (
                               <Badge variant="outline" className="text-[10px] h-4 bg-amber-500/10 text-amber-500 border-amber-500/20">
-                                NÃO INDEXADO
+                                {t('sideload.install.notIndexed')}
                               </Badge>
                             )}
                           </div>
@@ -245,7 +247,7 @@ const scanMutation = useMutation({
                         {installed ? (
                           <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-md bg-emerald-500/10 text-emerald-500 text-sm font-semibold border border-emerald-500/20">
                             <CheckCircle2 className="h-4 w-4" />
-                            Instalado
+                            {t('sideload.install.installed')}
                           </div>
                         ) : (
                           <div className="flex flex-col items-end gap-1">
@@ -266,13 +268,13 @@ const scanMutation = useMutation({
                               ) : (
                                 <DownloadCloud className="h-4 w-4 mr-2" />
                               )}
-                              {isInstalling ? 'Instalando...' : isWaiting ? 'Aguardando...' : isReady ? 'Instalar no Quest' : 'Em espera'}
+                              {isInstalling ? t('sideload.install.installing') : isWaiting ? t('sideload.install.waiting') : isReady ? t('sideload.install.installOnQuest') : t('sideload.install.onHold')}
                             </Button>
                             {!isReady && !isDownloading && (
-                              <span className="text-[9px] text-muted-foreground italic px-1">Indexe para habilitar</span>
+                              <span className="text-[9px] text-muted-foreground italic px-1">{t('sideload.install.indexToEnable')}</span>
                             )}
                             {isDownloading && (
-                              <span className="text-[9px] text-indigo-500 italic px-1">Aguarde a conclusão</span>
+                              <span className="text-[9px] text-indigo-500 italic px-1">{t('sideload.install.waitForCompletion')}</span>
                             )}
                           </div>
                         )}
@@ -291,11 +293,11 @@ const scanMutation = useMutation({
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Layers className="text-indigo-500 h-5 w-5" />
-              Apps no Dispositivo
+              {t('sideload.apps.title')}
             </span>
             {deviceInfo && (
               <Badge variant="secondary" className="font-normal bg-indigo-500/10 text-indigo-400">
-                {deviceInfo.apps.length} pacotes detectados
+                {deviceInfo.apps.length} {t('sideload.apps.packagesDetected')}
               </Badge>
             )}
           </CardTitle>
@@ -303,7 +305,7 @@ const scanMutation = useMutation({
         <CardContent className="p-0 max-h-[500px] overflow-y-auto custom-scrollbar">
           {!selectedDevice ? (
             <div className="p-8 text-center text-muted-foreground">
-              Selecione um dispositivo para ver os apps instalados.
+              {t('sideload.apps.selectDevice')}
             </div>
           ) : loadingApps ? (
             <div className="p-8 flex justify-center">
@@ -319,7 +321,7 @@ const scanMutation = useMutation({
                     size="icon"
                     className="h-8 w-8 shrink-0 hover:bg-rose-700"
                     onClick={() => {
-                      if (confirm(`Deseja realmente desinstalar ${app}?`)) {
+                      if (confirm(t('sideload.apps.confirmUninstall').replace('{}', app))) {
                         uninstallMutation.mutate(app);
                       }
                     }}
@@ -332,7 +334,7 @@ const scanMutation = useMutation({
             </div>
           ) : (
             <div className="p-8 text-center text-muted-foreground">
-              Nenhum pacote de terceiro encontrado.
+              {t('sideload.apps.noApps')}
             </div>
           )}
         </CardContent>

@@ -4,7 +4,7 @@ import * as cheerio from 'cheerio';
 import { getDb } from '../db/sqlite';
 import { fetchGameImage } from '../utils/images';
 import { translateText } from '../utils/translate';
-import { io } from '../index';
+import { io, getTranslationLanguage } from '../index';
 
 let isRunning = false;
 let currentStatus = 'Idle';
@@ -162,13 +162,14 @@ export async function extractPostDetails(url: string, useNewTab: boolean = false
 async function translateGame(title: string, description: string) {
   let translated_description = null;
   let translated_title = null;
+  const lang = getTranslationLanguage();
 
   try {
     // 1. Translate description
-    translated_description = await translateText(description, 'pt');
+    translated_description = await translateText(description, lang);
 
     // 2. Translate title (including the bracketed categories)
-    translated_title = await translateText(title, 'pt');
+    translated_title = await translateText(title, lang);
   } catch (err) {
     console.log(`[!] Translation failed for ${title}.`);
   }
@@ -183,11 +184,11 @@ async function translateGame(title: string, description: string) {
 
   // 3. Translate metadata fields (they are short, so this is fast)
   try {
-    if (genre) genre = await translateText(genre, 'pt');
-    if (developer && developer !== 'Mikalai Kazei' && developer !== 'Unknown') developer = await translateText(developer, 'pt');
-    if (publisher && publisher !== 'Mikalai Kazei' && publisher !== 'Unknown') publisher = await translateText(publisher, 'pt');
-    if (languages) languages = await translateText(languages, 'pt');
-    if (play_modes) play_modes = await translateText(play_modes, 'pt');
+    if (genre) genre = await translateText(genre, lang);
+    if (developer && developer !== 'Mikalai Kazei' && developer !== 'Unknown') developer = await translateText(developer, lang);
+    if (publisher && publisher !== 'Mikalai Kazei' && publisher !== 'Unknown') publisher = await translateText(publisher, lang);
+    if (languages) languages = await translateText(languages, lang);
+    if (play_modes) play_modes = await translateText(play_modes, lang);
   } catch (err) {
     console.log(`[!] Metadata translation failed for ${title}.`);
   }
@@ -442,4 +443,63 @@ export async function retryAllFailedGames() {
   }
 
   return { successes, errors };
+}
+
+export async function rebuildAll() {
+  if (isRunning) throw new Error('Scraper is already running. Stop it before rebuilding.');
+  const db = getDb();
+  const allGames = await db.all('SELECT id, post_url, title FROM games');
+  
+  isRunning = true;
+  currentStatus = `Rebuilding ${allGames.length} games...`;
+  
+  console.log(`--- Rebuild All Started: ${allGames.length} items ---`);
+  
+  (async () => {
+    try {
+      await buildAxiosSession();
+      let count = 0;
+      
+      for (const game of allGames) {
+        if (!isRunning) break;
+        count++;
+        currentStatus = `Rebuilding game ${count}/${allGames.length}: ${game.title}`;
+        
+        try {
+          // Try HTTP first
+          let details = await fetchPostDetailsHttp(game.post_url).catch(() => null);
+          if (!details) {
+            // Fallback to Puppeteer (slower but more reliable for list detection)
+            details = await extractPostDetails(game.post_url, true);
+          }
+          
+          if (details) {
+            const image_url = await fetchGameImage(details.title, details.postImage);
+            const { translated_description, translated_title, genre, developer, publisher, version, languages, play_modes } = await translateGame(details.title, details.description);
+            
+            await db.run(
+              `UPDATE games SET title = ?, translated_title = ?, description = ?, translated_description = ?, magnet = ?, tags = ?, size = ?, image_url = ?, seeds = ?, leeches = ?, registered_at = ?, torrent_downloads = ?, genre = ?, developer = ?, publisher = ?, version = ?, languages = ?, play_modes = ? WHERE id = ?`,
+              [details.title, translated_title, details.description, translated_description, details.magnet, details.tags, details.size || 'Unknown', image_url, details.seeds, details.leeches, details.registeredAt, details.torrentDownloads, genre, developer, publisher, version, languages, play_modes, game.id]
+            );
+            console.log(`[Rebuild] Updated: ${game.title}`);
+          }
+        } catch (err: any) {
+          console.error(`[Rebuild] Failed for ${game.post_url}: ${err.message}`);
+        }
+        
+        // Anti-ban delay
+        await delay(1000 + Math.random() * 500);
+      }
+      
+      currentStatus = 'Rebuild Finished';
+      console.log('--- Rebuild All Finished ---');
+    } catch (err: any) {
+      currentStatus = `Rebuild Error: ${err.message}`;
+      console.error('--- Rebuild All Fatal Error ---', err);
+    } finally {
+      isRunning = false;
+    }
+  })();
+
+  return { success: true, message: 'Rebuild started in background' };
 }

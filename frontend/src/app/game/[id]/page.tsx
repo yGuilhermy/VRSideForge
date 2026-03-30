@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import api from '@/lib/api';
 import { useStore } from '@/store/useStore';
+import { useTranslation } from '@/lib/i18n';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +39,7 @@ interface GameDetail {
 export default function GamePage() {
   const { id } = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { downloadPath } = useStore();
   const [showTranslated, setShowTranslated] = React.useState(true);
@@ -124,24 +126,24 @@ export default function GamePage() {
   const translateMutation = useMutation({
     mutationFn: () => api.post(`/translate/${id}`),
     onSuccess: (res) => {
-      toast.success('Tradução concluída');
+      toast.success(t('game.description.translationDone'));
       queryClient.setQueryData(['game', id], (old: any) => ({
         ...old,
         translated_description: res.data.translated_description,
         translated_title: res.data.translated_title,
       }));
     },
-    onError: () => toast.error('Falha ao traduzir. Verifique o backend.'),
+    onError: () => toast.error(t('game.description.translationFailed')),
   });
 
   const qbitMutation = useMutation({
     mutationFn: () => api.post('/torrent/download', { magnet: game?.magnet, gameId: game?.id }),
     onSuccess: () => {
-      toast.success('Download iniciado!');
+      toast.success(`${t('common.status')}: Download iniciado!`);
       // Força refetch imediato para pegar o estado predownload
       queryClient.invalidateQueries({ queryKey: ['torrents'] });
     },
-    onError: (err: any) => toast.error(err.response?.data?.error || 'Erro ao conectar ao qBit'),
+    onError: (err: any) => toast.error(err.response?.data?.error || t('common.error')),
   });
 
   const qbitAction = useMutation({
@@ -152,25 +154,25 @@ export default function GamePage() {
       return api.post('/torrent/action', { hash: active.hash, action });
     },
     onSuccess: () => {
-      toast.success('Comando enviado!');
+      toast.success(t('common.save'));
       queryClient.invalidateQueries({ queryKey: ['torrents'] });
     },
-    onError: (err: any) => toast.error(err.message || 'Erro ao executar comando'),
+    onError: (err: any) => toast.error(err.message || t('common.error')),
   });
 
   const updateMutation = useMutation({
     mutationFn: (full: boolean) => api.post(`/games/${id}/update`, { full }),
     onSuccess: (res) => {
-      toast.success(res.data.seeds !== undefined ? 'Dados atualizados!' : 'Jogo reconstruído!');
+      toast.success(res.data.seeds !== undefined ? t('game.stats.updateData') : t('game.stats.fullRebuild'));
       queryClient.setQueryData(['game', id], res.data);
     },
-    onError: () => toast.error('Falha ao atualizar dados. Verifique a sessão.'),
+    onError: () => toast.error(t('common.error')),
   });
 
   const wishlistMutation = useMutation({
     mutationFn: (wishlist: boolean) => api.post(`/games/${id}/wishlist`, { wishlist }),
     onSuccess: (res) => {
-      toast.success(res.data.wishlist ? 'Adicionado à Lista de Desejos' : 'Removido da Lista de Desejos');
+      toast.success(res.data.wishlist ? t('game.wishlist.added') : t('game.wishlist.removed'));
       queryClient.setQueryData(['game', id], (old: any) => ({ ...old, wishlist: res.data.wishlist ? 1 : 0 }));
     },
   });
@@ -194,8 +196,8 @@ export default function GamePage() {
       const res = await api.post('/adb/install', { folderPath: fullPath, deviceId: selectedDevice });
       return res.data;
     },
-    onSuccess: () => toast.success('Instalação concluída com sucesso!'),
-    onError: (error: any) => toast.error('Erro na instalação: ' + (error.response?.data?.error || error.message))
+    onSuccess: () => toast.success(t('sideload.install.installed')),
+    onError: (error: any) => toast.error(t('common.error') + ': ' + (error.response?.data?.error || error.message))
   });
 
   if (isLoading) {
@@ -214,8 +216,8 @@ export default function GamePage() {
   if (isError || !game) {
     return (
       <div className="text-center p-12 max-w-lg mx-auto bg-card rounded-xl border border-destructive/20 shadow-lg mt-10">
-        <h2 className="text-2xl font-bold text-destructive mb-4">Jogo não encontrado</h2>
-        <Button onClick={() => router.push('/')}>Voltar para o Início</Button>
+        <h2 className="text-2xl font-bold text-destructive mb-4">{t('game.notFound')}</h2>
+        <Button onClick={() => router.push('/')}>{t('game.backHome')}</Button>
       </div>
     );
   }
@@ -230,8 +232,8 @@ export default function GamePage() {
               <RefreshCw className="h-6 w-6 animate-spin" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold uppercase tracking-wider">Sideloading Progress</p>
-              <p className="text-xs text-indigo-100/80">Instalando no Quest via USB...</p>
+              <p className="text-sm font-bold uppercase tracking-wider">{t('game.sideloading')}</p>
+              <p className="text-xs text-indigo-100/80">{t('game.installingOnQuest')}</p>
               <div className="w-full bg-black/20 h-1.5 rounded-full mt-2 overflow-hidden">
                 <div className="bg-white h-full w-full animate-progress-loading origin-left"></div>
               </div>
@@ -241,7 +243,7 @@ export default function GamePage() {
       )}
 
       <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors group">
-        <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" /> Voltar
+        <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" /> {t('game.back')}
       </Link>
 
       <div className="flex flex-col md:flex-row gap-8">
@@ -291,7 +293,7 @@ export default function GamePage() {
                       <div className="flex items-center gap-2">
                         {isDownloaded ? <HardDriveDownload className="h-5 w-5" /> : active ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Server className="h-5 w-5" />}
                         <span className="text-lg">
-                          {isDownloaded ? 'Concluído no PC' : isPredownloading ? 'Predownload' : active ? `Baixando ${active.progress}%` : 'Baixar no Servidor'}
+                          {isDownloaded ? t('game.downloadStatus.finished') : isPredownloading ? t('game.downloadStatus.predownload') : active ? `${t('game.downloadStatus.downloading')} ${active.progress}%` : t('game.downloadStatus.downloadServer')}
                         </span>
                       </div>
                       {active && !isDownloaded && (
@@ -316,7 +318,7 @@ export default function GamePage() {
                         ) : (
                           <Smartphone className="h-5 w-5" />
                         )}
-                        {devices.length === 0 ? 'Conecte o Quest via USB' : 'Instalar no Quest'}
+                        {devices.length === 0 ? t('game.actions.connectQuest') : t('game.actions.installOnQuest')}
                       </Button>
                     )}
 
@@ -326,7 +328,7 @@ export default function GamePage() {
                         className="w-full border-border/50 hover:bg-muted font-semibold"
                         onClick={() => window.open(game.magnet, '_self')}
                       >
-                        <Download className="mr-2 h-4 w-4" /> Baixar Magnet (Local)
+                        <Download className="mr-2 h-4 w-4" /> {t('game.downloadStatus.downloadLocal')}
                       </Button>
                     )}
 
@@ -337,7 +339,7 @@ export default function GamePage() {
                           size="sm" 
                           className="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
                           onClick={() => qbitAction.mutate('delete')}
-                          title="Remover da Lista"
+                          title={t('game.actions.remove')}
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>
@@ -346,18 +348,18 @@ export default function GamePage() {
                           size="sm" 
                           className="col-span-2 flex gap-2"
                           onClick={() => {
-                            if(confirm('Isso vai apagar permanentemente os arquivos do servidor. Tem certeza?')) {
+                            if(confirm(t('game.actions.deleteConfirm'))) {
                               qbitAction.mutate('delete_drive');
                             }
                           }}
                         >
-                          <Trash2 className="h-4 w-4" /> Apagar Arquivos
+                          <Trash2 className="h-4 w-4" /> {t('game.actions.deleteFiles')}
                         </Button>
                       </div>
                     )}
 
                     <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:bg-transparent hover:text-foreground" onClick={() => window.open(game.post_url, '_blank')}>
-                      <ExternalLink className="mr-2 h-3 w-3" /> Ver Post Original
+                      <ExternalLink className="mr-2 h-3 w-3" /> {t('game.actions.viewPost')}
                     </Button>
                   </div>
                 );
@@ -387,7 +389,7 @@ export default function GamePage() {
                 </Badge>
               ))}
               {game.wishlist === 1 && (
-                <Badge className="bg-rose-500 text-white border-none animate-in zoom-in-50 rounded-full px-3 py-1 font-black shadow-lg shadow-rose-500/20">Sua Lista de Desejos</Badge>
+                <Badge className="bg-rose-500 text-white border-none animate-in zoom-in-50 rounded-full px-3 py-1 font-black shadow-lg shadow-rose-500/20">{t('game.wishlist.title')}</Badge>
               )}
             </div>
 
@@ -411,7 +413,7 @@ export default function GamePage() {
                 <div className="bg-emerald-500/10 p-2 rounded-xl">
                   <HardDriveDownload className="h-5 w-5" />
                 </div>
-                <span>Este jogo já está na sua pasta de downloads</span>
+                <span>{t('game.installed')}</span>
               </div>
             )}
           </div>
@@ -420,21 +422,21 @@ export default function GamePage() {
             {/* Torrent Stats Bar */}
             <div className="flex flex-wrap gap-4 p-4 bg-card/30 backdrop-blur border border-border/40 rounded-2xl shadow-inner scrollbar-hide overflow-x-auto">
               <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground/60 mb-0.5">Sementes (Seeds)</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground/60 mb-0.5">{t('game.stats.seeds')}</span>
                 <span className="text-emerald-400 font-mono text-lg flex items-center gap-1.5">
                   <Activity className="h-4 w-4" /> {game.seeds}
                 </span>
               </div>
               <div className="w-[1px] bg-border/40 h-10 self-center hidden sm:block"></div>
               <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground/60 mb-0.5">Leechers</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground/60 mb-0.5">{t('game.stats.leeches')}</span>
                 <span className="text-amber-400 font-mono text-lg">
                   {game.leeches}
                 </span>
               </div>
               <div className="w-[1px] bg-border/40 h-10 self-center hidden sm:block"></div>
               <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-muted-foreground/60 mb-0.5">Downloads .torrent</span>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground/60 mb-0.5">{t('game.stats.downloads')}</span>
                 <span className="text-foreground/80 font-mono text-lg">
                   {game.torrent_downloads} <span className="text-xs text-muted-foreground">x</span>
                 </span>
@@ -447,11 +449,11 @@ export default function GamePage() {
                     disabled={updateMutation.isPending}
                   >
                     <RefreshCw className={`h-4 w-4 ${updateMutation.isPending ? 'animate-spin' : ''}`} />
-                    <span className="text-[10px] uppercase font-bold">Atualizar Dados</span>
+                    <span className="text-[10px] uppercase font-bold">{t('game.stats.updateData')}</span>
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-3 bg-card/90 backdrop-blur border-border/50 rounded-2xl shadow-2xl" side="top" align="end">
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 mb-2">Selecione o modo</p>
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 mb-2">{t('game.stats.selectMode')}</p>
                       
                       <button 
                         onClick={() => updateMutation.mutate(false)}
@@ -461,14 +463,14 @@ export default function GamePage() {
                           <Info className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold">Apenas Estatísticas</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">Atualiza Seeds, Leechers e contagem de downloads.</p>
+                          <p className="text-sm font-bold">{t('game.stats.statsOnly')}</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{t('game.stats.statsOnlyDesc')}</p>
                         </div>
                       </button>
 
                       <button 
                         onClick={() => {
-                          if(confirm('Isso vai reconstruir TUDO (descrição, imagem, tags). Continuar?')) {
+                          if(confirm(t('game.stats.rebuildConfirm'))) {
                             updateMutation.mutate(true);
                           }
                         }}
@@ -478,8 +480,8 @@ export default function GamePage() {
                           <Database className="h-4 w-4" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold">Reconstrução Total</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">Busca e reescreve todas as informações do post original.</p>
+                          <p className="text-sm font-bold">{t('game.stats.fullRebuild')}</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight">{t('game.stats.fullRebuildDesc')}</p>
                         </div>
                       </button>
                     </div>
@@ -491,7 +493,7 @@ export default function GamePage() {
             <Card className="border-border/50 bg-card/40 backdrop-blur p-6 rounded-3xl shadow-lg relative overflow-hidden">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-2xl font-bold flex items-center gap-2">
-                  <Languages className="h-6 w-6 text-indigo-500" /> Descrição
+                  <Languages className="h-6 w-6 text-indigo-500" /> {t('game.description.title')}
                 </h3>
                 
                 <div className="flex gap-2">
@@ -503,7 +505,7 @@ export default function GamePage() {
                       disabled={translateMutation.isPending}
                       className="bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20 shadow-lg"
                     >
-                      {translateMutation.isPending ? 'Traduzindo...' : 'Traduzir Agora'}
+                      {translateMutation.isPending ? t('game.description.translating') : t('game.description.translateNow')}
                     </Button>
                   ) : (
                     <Button 
@@ -512,7 +514,7 @@ export default function GamePage() {
                       onClick={() => setShowTranslated(!showTranslated)}
                       className="border-border/60 hover:bg-muted"
                     >
-                      {showTranslated ? 'Ver Original' : 'Ver Tradução'}
+                      {showTranslated ? t('game.description.viewOriginal') : t('game.description.viewTranslation')}
                     </Button>
                   )}
                 </div>
@@ -529,8 +531,8 @@ export default function GamePage() {
               {!game.translated_description && (
                 <div className="mt-6 text-muted-foreground italic flex flex-col items-center justify-center py-10 text-center bg-muted/20 rounded-2xl border border-dashed border-border/50">
                   <Languages className="h-12 w-12 text-muted-foreground/20 mb-3" />
-                  <p className="text-lg">Esta postagem está em russo.</p>
-                  <p className="text-sm opacity-60">Clique no botão de tradução para ler em português.</p>
+                  <p className="text-lg">{t('game.description.russianPost')}</p>
+                  <p className="text-sm opacity-60">{t('game.description.clickTranslate')}</p>
                 </div>
               )}
             </Card>

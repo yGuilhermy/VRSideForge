@@ -1,0 +1,299 @@
+{
+  "common": {
+    "settings": "Configurações",
+    "home": "Início",
+    "sideload": "Sideload",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "search": "Buscar jogos...",
+    "offlineMode": "Modo Offline",
+    "downloadPath": "Diretório de Downloads",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "running": "Executando",
+    "stopped": "Parado",
+    "start": "Iniciar",
+    "stop": "Parar",
+    "status": "Status"
+  },
+  "settings": {
+    "title": "Configurações",
+    "description": "Gerencie o scraping, a sessão do fórum e preferências.",
+    "forumSession": {
+      "title": "Sessão do Fórum",
+      "description": "Acesso ao fórum fonte. Necessário para indexar e buscar informações não-públicas.",
+      "active": "Sessão Ativa",
+      "invalid": "Sessão Inválida",
+      "invalidDescription": "Inicie a autenticação para abrir o navegador e fazer login manualmente.",
+      "reauthenticate": "Re-autenticar",
+      "login": "Fazer Login (Background)"
+    },
+    "offlineMode": {
+      "title": "Modo Offline",
+      "description": "Desativa todas as requisições ao fórum externo. Útil para navegação puramente local.",
+      "label": "Ativar Modo Offline",
+      "footer": "Quando ativado, o app navegará mais rápido usando apenas o banco de dados."
+    },
+    "downloadPath": {
+      "title": "Diretório de Downloads",
+      "description": "Pasta onde o servidor irá salvar os jogos e verificar arquivos existentes.",
+      "label": "Caminho da Pasta",
+      "placeholder": "E:\\VRGames",
+      "footer": "O sistema criará um arquivo .index.json nesta pasta para validação automática."
+    },
+    "indexer": {
+      "title": "Indexador Automático (Worker)",
+      "description": "Controle o processo automatizado de busca e extração de jogos do fórum.",
+      "status": "Status",
+      "activity": "Atividade atual",
+      "none": "Nenhuma",
+      "captchaTitle": "Atenção! Captcha Necessário",
+      "captchaDescription": "O anti-bot do fórum foi ativado. Por favor, resolva o captcha para continuar.",
+      "solveManual": "Resolver Manualmente (Abrir Pop-up)",
+      "footer": "Atualização inteligente"
+    },
+    "language": {
+      "title": "Configurações de Linguagem",
+      "description": "Configure os idiomas da interface e das traduções.",
+      "interface": {
+        "label": "Idioma da Interface",
+        "description": "Escolha o idioma da interface do aplicativo."
+      },
+      "translation": {
+        "label": "Idioma das Traduções",
+        "description": "Escolha o idioma para as descrições e títulos dos jogos (scraped do fórum).",
+        "warning": "Aviso: Ao mudar a língua de tradução com um banco de dados já existente, você terá que reconstruir o banco para traduzir tudo. Reconstruir o banco de dados individual de um jogo já utilizará esta nova língua."
+      }
+    }
+  },
+  "home": {
+    "search": {
+      "title": "Pesquisar",
+      "placeholder": "Buscar jogos..."
+    },
+    "sort": {
+      "title": "Ordenar",
+      "newest": "Novidades (Recente)",
+      "alphabetical": "Ordem Alfabética (A-Z)",
+      "seeds": "Mais Sementes (Seeders)"
+    },
+    "translation": {
+      "title": "Tradução",
+      "viewOriginal": "Ver Original",
+      "translateTitles": "Traduzir Títulos"
+    },
+    "tools": {
+      "title": "Ferramentas",
+      "hideFolders": "Ocultar Pastas Locais",
+      "showFolders": "Mostrar Pastas Locais"
+    },
+    "filter": {
+      "genre": "Gênero",
+      "developer": "Adicionados por",
+      "all": "Todos",
+      "allGames": "Explorar Tudo",
+      "myGames": "Meus Jogos",
+      "wishlist": "Lista de Desejos"
+    },
+    "sidebar": {
+      "hide": "Ocultar",
+      "show": "Mostrar Filtros"
+    },
+    "status": {
+      "showing": "Exibindo",
+      "games": "jogos",
+      "noGames": "Nenhum jogo encontrado",
+      "noGamesDesc": "Tente alterar os filtros ou inicie o indexador nas configurações.",
+      "downloaded": "BAIXADO",
+      "predownload": "PREDOWNLOAD",
+      "downloading": "BAIXANDO",
+      "installed": "Instalado"
+    },
+    "folders": {
+      "title": "Arquivos Físicos no HD",
+      "directory": "Diretório Local",
+      "noFolders": "Nenhuma pasta encontrada neste diretório.",
+      "checkSettings": "Verifique se o caminho está correto nas Configurações",
+      "indexed": "Indexado",
+      "clickToIndex": "Clique para indexar"
+    },
+    "pagination": {
+      "itemsPerPage": "Itens por página:",
+      "custom": "Custom",
+      "page": "Página",
+      "of": "de"
+    }
+  },
+  "sideload": {
+    "title": "Sideload",
+    "description": "Gerencie e instale jogos diretamente no seu Quest.",
+    "updateStatus": "Atualizar Baixados",
+    "updateConnection": "Atualizar Conexão",
+    "connectionStatus": {
+      "title": "Status da Conexão",
+      "noDevice": "Nenhum dispositivo encontrado.",
+      "noDeviceDesc": "Conecte seu Quest via USB e permita o modo de depuração.",
+      "storage": "Armazenamento",
+      "free": "Livre",
+      "total": "Total",
+      "usage": "Uso"
+    },
+    "install": {
+      "title": "Instalar no Dispositivo",
+      "found": "encontrados",
+      "noPath": "Pasta de downloads não configurada. Vá em configurações.",
+      "noGames": "Nenhum jogo na pasta local para instalar.",
+      "inProgress": "EM PROGRESSO",
+      "notIndexed": "NÃO INDEXADO",
+      "installed": "Instalado",
+      "installing": "Instalando...",
+      "waiting": "Aguardando...",
+      "installOnQuest": "Instalar no Quest",
+      "onHold": "Em espera",
+      "indexToEnable": "Indexe para habilitar",
+      "waitForCompletion": "Aguarde a conclusão"
+    },
+    "apps": {
+      "title": "Apps no Dispositivo",
+      "packagesDetected": "pacotes detectados",
+      "selectDevice": "Selecione um dispositivo para ver os apps instalados.",
+      "noApps": "Nenhum pacote de terceiro encontrado.",
+      "confirmUninstall": "Deseja realmente desinstalar {}?"
+    }
+  },
+  "game": {
+    "back": "Voltar",
+    "notFound": "Jogo não encontrado",
+    "backHome": "Voltar para o Início",
+    "sideloading": "Progresso de Sideloading",
+    "installingOnQuest": "Instalando no Quest via USB...",
+    "downloadStatus": {
+      "finished": "Concluído no PC",
+      "predownload": "Predownload",
+      "downloading": "Baixando",
+      "downloadServer": "Baixar no Servidor",
+      "downloadLocal": "Baixar Magnet (Local)"
+    },
+    "actions": {
+      "installOnQuest": "Instalar no Quest",
+      "connectQuest": "Conecte o Quest via USB",
+      "remove": "Remover da Lista",
+      "deleteFiles": "Apagar Arquivos",
+      "deleteConfirm": "Isso vai apagar permanentemente os arquivos do servidor. Tem certeza?",
+      "viewPost": "Ver Post Original"
+    },
+    "stats": {
+      "seeds": "Sementes (Seeds)",
+      "leeches": "Leechers",
+      "downloads": "Downloads .torrent",
+      "updateData": "Atualizar Dados",
+      "selectMode": "Selecione o modo",
+      "statsOnly": "Apenas Estatísticas",
+      "statsOnlyDesc": "Atualiza Seeds, Leechers e contagem de downloads.",
+      "fullRebuild": "Reconstrução Total",
+      "fullRebuildDesc": "Busca e reescreve todas as informações do post original.",
+      "rebuildConfirm": "Isso vai reconstruir TUDO (descrição, imagem, tags). Continuar?"
+    },
+    "description": {
+      "title": "Descrição",
+      "translateNow": "Traduzir Agora",
+      "translating": "Traduzindo...",
+      "translationDone": "Tradução concluída",
+      "translationFailed": "Falha ao traduzir. Verifique o backend.",
+      "viewOriginal": "Ver Original",
+      "viewTranslation": "Ver Tradução",
+      "russianPost": "Esta postagem está em russo.",
+      "clickTranslate": "Clique no botão de tradução para ler em português."
+    },
+    "installed": "Este jogo já está na sua pasta de downloads",
+    "wishlist": {
+      "title": "Sua Lista de Desejos",
+      "added": "Adicionado à Lista de Desejos",
+      "removed": "Removido da Lista de Desejos"
+    }
+  },
+  "sidebar": {
+    "games": "Jogos",
+    "sideload": "Sideload",
+    "settings": "Configurações",
+    "admin": "Admin",
+    "filters": "Filtros",
+    "genres": "Gêneros",
+    "developers": "Desenvolvedores",
+    "showMore": "Mostrar Mais",
+    "showLess": "Mostrar Menos",
+    "toggleSidebar": "Alternar Sidebar"
+  },
+  "admin": {
+    "title": "Administração de Banco de Dados",
+    "description": "Visualize e edite manualmente os jogos inseridos pelo Scraper.",
+    "table": {
+      "id": "ID",
+      "title": "Título",
+      "meta": "Meta (Gênero/Dev)",
+      "action": "Ação",
+      "noData": "Nenhum dado encontrado.",
+      "total": "Total de itens",
+      "noGenre": "Sem Gênero",
+      "noDev": "Sem Dev"
+    },
+    "actions": {
+      "export": "Exportar Backup",
+      "import": "Importar Backup",
+      "importing": "Analisando...",
+      "clear": "Limpar Database",
+      "confirmClear": "Confirmar apagamento {{count}}/5",
+      "clearWarning": "Aviso: Tem certeza? Faltam {{remaining}} confirmações para perder todos os dados."
+    },
+    "failed": {
+      "title": "Falhas no Scraping",
+      "description": "URLs que não puderam ser processadas devido a erros.",
+      "noFailures": "Nenhuma falha registrada.",
+      "retry": "Tentar",
+      "retryAll": "Tentar Todos",
+      "processing": "Processando fila...",
+      "status": "Itens salvos aqui não aparecerão no catálogo principal até serem processados.",
+      "retryAllSuccess": "Tentativa em massa concluída! Sucessos: {{successes}}, Falhas: {{errors}}"
+    },
+    "edit": {
+      "title": "Editar Jogo",
+      "description": "Altere as informações (título original, etiquetas) armazenadas no banco.",
+      "labelTitle": "Título",
+      "genre": "Gênero",
+      "developer": "Desenvolvedor",
+      "publisher": "Editora",
+      "version": "Versão",
+      "languages": "Idiomas",
+      "playModes": "Modos de Jogo",
+      "save": "Salvar Alterações"
+    },
+    "backup": {
+      "title": "Importar Banco de Dados",
+      "description": "Um backup válido foi encontrado. Ao continuar, sua database ATUAL será apagada e os dados do backup aplicados.",
+      "details": {
+        "created": "Criação",
+        "code": "Código de Validação",
+        "files": "Arquivos"
+      },
+      "confirm": "Apagar Tudo e Substituir"
+    },
+    "rebuildAll": {
+      "button": "Reconstruir Tudo (Tradução)",
+      "confirm": "Isso vai re-scrapear TODOS os jogos no banco para atualizar as traduções para {{lang}}. Pode demorar e depende da internet/sessão. Continuar?",
+      "success": "Reconstrução total iniciada em segundo plano."
+    }
+  },
+  "footer": {
+    "description": "Sistema automatizado para catalogar, baixar e instalar localmente conteúdo VR.",
+    "navigation": "Navegação",
+    "info": "Informações",
+    "legal": "Aviso Legal",
+    "poweredBy": "Powered by ADB",
+    "beta": "Fase Beta!",
+    "copyright": "Todos os direitos reservados",
+    "madeWith": "Feito com",
+    "forEnthusiasts": "para entusiastas de Realidade Virtual"
+  }
+}

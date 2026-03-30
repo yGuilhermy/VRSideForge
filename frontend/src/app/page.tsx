@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { io } from 'socket.io-client';
 import api from '@/lib/api';
 import { useStore } from '@/store/useStore';
+import { useTranslation } from '@/lib/i18n';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle, CardFooter } from '@/components/ui/card';
@@ -31,6 +32,7 @@ interface Game {
 }
 
 export default function Home() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [page, setPage] = useState(1);
@@ -108,11 +110,11 @@ export default function Home() {
       return res.data;
     },
     onSuccess: (data) => {
-      toast.success(`Scan completo! Encontradas correspondências para ${data.matchedCount} itens.`);
+      toast.success(`${t('common.status')}: Encontradas correspondências para ${data.matchedCount} itens.`);
       queryClient.invalidateQueries({ queryKey: ['games'] });
       if (showFolders) refetchFolders();
     },
-    onError: (err: any) => toast.error('Erro ao escanear: ' + err.message)
+    onError: (err: any) => toast.error(t('common.error') + ': ' + err.message)
   });
 
   const manualIndexMutation = useMutation({
@@ -125,14 +127,14 @@ export default function Home() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Jogo indexado com sucesso!');
+      toast.success(t('home.folders.indexed'));
       setIsManualIndexOpen(false);
       setManualIndexFolder(null);
       setManualGameId('');
       refetchFolders();
       queryClient.invalidateQueries({ queryKey: ['games'] });
     },
-    onError: (err: any) => toast.error('Erro ao indexar: ' + err.message)
+    onError: (err: any) => toast.error(t('common.error') + ': ' + err.message)
   });
 
   const games = data?.games || [];
@@ -236,12 +238,12 @@ export default function Home() {
         <div className="sticky top-20 space-y-6">
           <div className="space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Search className="h-5 w-5 text-primary" /> Pesquisar
+              <Search className="h-5 w-5 text-primary" /> {t('home.search.title')}
             </h2>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar jogos..."
+                placeholder={t('home.search.placeholder')}
                 className="pl-9 bg-card/50 border-border/50 focus:border-primary/50"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -251,7 +253,7 @@ export default function Home() {
 
           <div className="space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <RefreshCw className="h-5 w-5 text-indigo-500" /> Ordenar
+              <RefreshCw className="h-5 w-5 text-indigo-500" /> {t('home.sort.title')}
             </h2>
             <div className="flex flex-col gap-2">
               <Button 
@@ -260,7 +262,7 @@ export default function Home() {
                 onClick={() => setSort('time')}
               >
                 <Zap className="h-4 w-4" />
-                Novidades (Recentes)
+                {t('home.sort.newest')}
               </Button>
               <Button 
                 variant={sort === 'alpha' ? 'default' : 'outline'} 
@@ -268,7 +270,7 @@ export default function Home() {
                 onClick={() => setSort('alpha')}
               >
                 <SortAsc className="h-4 w-4" />
-                Ordem Alfabética (A-Z)
+                {t('home.sort.alphabetical')}
               </Button>
               <Button 
                 variant={sort === 'seeds' ? 'default' : 'outline'} 
@@ -276,14 +278,14 @@ export default function Home() {
                 onClick={() => setSort('seeds')}
               >
                 <Users className="h-4 w-4" />
-                Mais Sementes (Seeders)
+                {t('home.sort.seeds')}
               </Button>
             </div>
           </div>
 
           <div className="space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Globe className="h-5 w-5 text-sky-500" /> Tradução
+              <Globe className="h-5 w-5 text-sky-500" /> {t('home.translation.title')}
             </h2>
             <Button 
               variant={translateMode ? 'default' : 'outline'} 
@@ -291,14 +293,14 @@ export default function Home() {
               onClick={() => setTranslateMode(!translateMode)}
             >
               <Languages className="h-4 w-4" />
-              {translateMode ? 'Ver Original' : 'Traduzir Títulos'}
+              {translateMode ? t('home.translation.viewOriginal') : t('home.translation.translateTitles')}
             </Button>
           </div>
 
           {typeFilter === 'baixados' && (
             <div className="space-y-4 animate-in fade-in duration-500 delay-100">
               <h2 className="text-xl font-bold flex items-center gap-2">
-                <LayoutDashboard className="h-5 w-5 text-amber-500" /> Ferramentas
+                <LayoutDashboard className="h-5 w-5 text-amber-500" /> {t('home.tools.title')}
               </h2>
               <Button 
                 variant={showFolders ? 'default' : 'outline'} 
@@ -306,14 +308,14 @@ export default function Home() {
                 onClick={() => setShowFolders(!showFolders)}
               >
                 <Folder className={`h-4 w-4 ${showFolders ? 'animate-bounce' : ''}`} />
-                {showFolders ? 'Ocultar Pastas Locais' : 'Listar Pastas Locais'}
+                {showFolders ? t('home.tools.hideFolders') : t('home.tools.showFolders')}
               </Button>
             </div>
           )}
 
           <div className="space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Filter className="h-5 w-5 text-emerald-500" /> Gênero
+              <Filter className="h-5 w-5 text-emerald-500" /> {t('home.filter.genre')}
             </h2>
             <div className="flex flex-wrap gap-2">
               <Badge 
@@ -321,7 +323,7 @@ export default function Home() {
                 className="cursor-pointer"
                 onClick={() => setGenreFilter('')}
               >
-                Todos
+                {t('home.filter.all')}
               </Badge>
               {filters.genres.slice(0, showAllGenres ? undefined : 15).map(genre => (
                 <Badge 
@@ -340,7 +342,7 @@ export default function Home() {
                   className="w-full text-[10px] h-8 text-primary hover:bg-primary/5 mt-2"
                   onClick={() => setShowAllGenres(!showAllGenres)}
                 >
-                  {showAllGenres ? 'Ver Menos -' : `Ver Mais (${filters.genres.length - 15})+`}
+                  {showAllGenres ? `${t('sidebar.showLess')} -` : `${t('sidebar.showMore')} (${filters.genres.length - 15})+`}
                 </Button>
               )}
             </div>
@@ -348,7 +350,7 @@ export default function Home() {
 
           <div className="space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <Activity className="h-5 w-5 text-rose-500" /> Adicionados por
+              <Activity className="h-5 w-5 text-rose-500" /> {t('home.filter.developer')}
             </h2>
             <div className="flex flex-col gap-1 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
               {filters.developers.map(dev => (
@@ -374,21 +376,21 @@ export default function Home() {
               className="cursor-pointer text-sm px-4 py-2 transition-all hover:scale-105"
               onClick={() => setTypeFilter('')}
             >
-              Explorar Tudo
+              {t('home.filter.allGames')}
             </Badge>
             <Badge 
               variant={typeFilter === 'baixados' ? 'default' : 'secondary'}
               className={`cursor-pointer text-sm px-4 py-2 transition-all hover:scale-105 ${typeFilter === 'baixados' ? 'bg-emerald-600' : ''}`}
               onClick={() => setTypeFilter('baixados')}
             >
-              <HardDriveDownload className="h-4 w-4 mr-2" /> Meus Jogos
+              <HardDriveDownload className="h-4 w-4 mr-2" /> {t('home.filter.myGames')}
             </Badge>
             <Badge 
               variant={typeFilter === 'wishlist' ? 'default' : 'secondary'}
               className={`cursor-pointer text-sm px-4 py-2 transition-all hover:scale-105 ${typeFilter === 'wishlist' ? 'bg-rose-600 text-white' : ''}`}
               onClick={() => setTypeFilter('wishlist')}
             >
-              <Heart className="h-4 w-4 mr-2" /> Lista de Desejos
+              <Heart className="h-4 w-4 mr-2" /> {t('home.filter.wishlist')}
             </Badge>
           </div>
           
@@ -398,10 +400,10 @@ export default function Home() {
               size="sm"
               className="gap-2 border-primary/20 hover:bg-primary/5 flex"
               onClick={() => setShowSidebar(!showSidebar)}
-              title={showSidebar ? "Ocultar Filtros" : "Mostrar Filtros"}
+              title={showSidebar ? t('home.sidebar.hide') : t('home.sidebar.show')}
             >
               {showSidebar ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-              <span className="hidden sm:inline">{showSidebar ? "Ocultar" : "Mostrar Filtros"}</span>
+              <span className="hidden sm:inline">{showSidebar ? t('home.sidebar.hide') : t('home.sidebar.show')}</span>
             </Button>
             
             {typeFilter === 'baixados' && (
@@ -413,11 +415,11 @@ export default function Home() {
                 disabled={scanMutation.isPending}
               >
                 <RefreshCw className={`h-4 w-4 ${scanMutation.isPending ? 'animate-spin' : ''}`} />
-                Atualizar Baixados
+                {t('common.status')}
               </Button>
             )}
             <p className="text-muted-foreground text-sm font-medium">
-              Exibindo <span className="text-foreground">{totalItems}</span> jogos
+              {t('home.status.showing')} <span className="text-foreground">{totalItems}</span> {t('home.status.games')}
             </p>
           </div>
         </div>
@@ -441,21 +443,21 @@ export default function Home() {
           <div className="space-y-4 animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
               <h3 className="text-lg font-bold flex items-center gap-2 text-amber-500">
-                <Folder className="h-5 w-5" /> Arquivos Físicos no HD ({physicalFolders.length})
+                <Folder className="h-5 w-5" /> {t('home.folders.title')} ({physicalFolders.length})
               </h3>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Diretório Local</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{t('home.folders.directory')}</p>
             </div>
             
             {/* Debug path indicator */}
             <div className="text-xs text-muted-foreground font-mono bg-muted/30 px-3 py-1.5 rounded-lg border border-border/30">
-              📁 <span className="text-foreground">{downloadPath || '(caminho não configurado)'}</span>
+              📁 <span className="text-foreground">{downloadPath || `(${t('settings.downloadPath.placeholder')})`}</span>
             </div>
 
             {physicalFolders.length === 0 ? (
               <div className="p-12 text-center bg-card/20 rounded-2xl border border-dashed border-border/50">
                 <Folder className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-muted-foreground">Nenhuma pasta encontrada neste diretório.</p>
-                <p className="text-xs text-muted-foreground/60 mt-2">Verifique se o caminho está correto nas Configurações</p>
+                <p className="text-muted-foreground">{t('home.folders.noFolders')}</p>
+                <p className="text-xs text-muted-foreground/60 mt-2">{t('home.folders.checkSettings')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -492,10 +494,10 @@ export default function Home() {
                       <div className="flex flex-col min-w-0">
                         <span className="font-semibold text-sm truncate" title={folder.name}>{folder.name}</span>
                         {isIndexed ? (
-                          <span className="text-[10px] text-emerald-600 font-bold uppercase">Indexado - ID {folder.gameId}</span>
+                          <span className="text-[10px] text-emerald-600 font-bold uppercase">{t('home.folders.indexed')} - ID {folder.gameId}</span>
                         ) : hasApk ? (
                           <span className="text-[10px] text-amber-600 font-bold uppercase flex items-center gap-1">
-                            <AlertCircle className="h-2.5 w-2.5" /> Clique para indexar
+                            <AlertCircle className="h-2.5 w-2.5" /> {t('home.folders.clickToIndex')}
                           </span>
                         ) : null}
                       </div>
@@ -517,8 +519,8 @@ export default function Home() {
         {!isLoading && !isError && filteredGames.length === 0 && (
           <div className="text-center p-12 bg-card rounded-xl border border-border/50">
             <ImageOff className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Nenhum jogo encontrado</h3>
-            <p className="text-muted-foreground">Tente alterar os filtros ou inicie o indexador nas configurações.</p>
+            <h3 className="text-xl font-semibold mb-2">{t('home.status.noGames')}</h3>
+            <p className="text-muted-foreground">{t('home.status.noGamesDesc')}</p>
           </div>
         )}
 
@@ -569,7 +571,7 @@ export default function Home() {
                           <div className="absolute top-3 left-3 animate-in fade-in zoom-in-50 duration-500 z-30">
                             <Badge className="bg-emerald-500 text-white backdrop-blur-md border-none px-2.5 py-1 shadow-xl flex items-center gap-1.5 text-[10px] font-black tracking-widest rounded-full">
                               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                              BAIXADO
+                              {t('home.status.downloaded')}
                             </Badge>
                           </div>
                         )}
@@ -577,7 +579,7 @@ export default function Home() {
                           <div className="absolute top-3 left-3 animate-in fade-in zoom-in-50 duration-500 z-30">
                             <Badge className="bg-purple-600 text-white backdrop-blur-md border-none px-2.5 py-1 shadow-xl flex items-center gap-1.5 text-[10px] font-black tracking-widest rounded-full">
                               <RefreshCw className="h-3 w-3 animate-spin" />
-                              PREDOWNLOAD
+                              {t('home.status.predownload')}
                             </Badge>
                           </div>
                         )}
@@ -585,7 +587,7 @@ export default function Home() {
                           <div className="absolute top-3 left-3 flex flex-col gap-1.5 w-36 animate-in fade-in zoom-in-50 duration-500 z-30">
                             <Badge className="bg-indigo-600 text-white backdrop-blur-md border-none shadow-xl flex items-center gap-1.5 text-[10px] font-black tracking-widest w-full justify-center py-1 rounded-full">
                               <Activity className="h-3 w-3 animate-pulse" />
-                              BAIXANDO {progress}%
+                              {t('home.status.downloading')} {progress}%
                             </Badge>
                             <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden backdrop-blur-md p-[1px] border border-white/10">
                               <div 
@@ -624,7 +626,7 @@ export default function Home() {
                   </CardTitle>
                   {game.isLocalDownload && (
                     <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                      <CheckCircle2 className="h-2.5 w-2.5" /> Instalado
+                      <CheckCircle2 className="h-2.5 w-2.5" /> {t('home.status.installed')}
                     </p>
                   )}
                 </CardContent>
@@ -645,7 +647,7 @@ export default function Home() {
         {(totalPages > 1 || totalItems > 10) && (
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-border/20">
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground mr-2">Itens por página:</span>
+              <span className="text-sm font-medium text-muted-foreground mr-2">{t('home.pagination.itemsPerPage')}</span>
               <div className="flex gap-2">
                 {[10, 20, 50, 100].map((v) => (
                   <Button
@@ -662,8 +664,7 @@ export default function Home() {
               <div className="flex items-center gap-2 ml-2">
                 <Input
                   type="number"
-                  className="w-24 bg-card/40 border-border/50 h-10 text-center placeholder:text-muted-foreground/30 px-2"
-                  placeholder="Custom"
+                  placeholder={t('home.pagination.custom')}
                   min={1}
                   max={500}
                   onBlur={(e) => {
@@ -693,7 +694,7 @@ export default function Home() {
                 </Button>
                 <div className="flex items-center bg-card/50 px-4 py-2 rounded-full border border-border/50 min-w-32 justify-center">
                   <span className="text-sm font-bold">
-                    Página {page} de {totalPages}
+                    {t('home.pagination.page')} {page} {t('home.pagination.of')} {totalPages}
                   </span>
                 </div>
                 <Button
@@ -715,15 +716,15 @@ export default function Home() {
           <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-md border-border">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Folder className="h-5 w-5 text-amber-500" /> Indexar Pasta Manualmente
+                <Folder className="h-5 w-5 text-amber-500" /> {t('home.folders.title')}
               </DialogTitle>
               <DialogDescription>
-                Esta pasta contém um APK. Informe o ID do jogo correspondente no banco de dados para indexá-lo.
+                {t('home.folders.clickToIndex')}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Pasta selecionada</Label>
+                <Label>{t('home.folders.directory')}</Label>
                 <div className="p-2 bg-muted rounded text-xs font-mono break-all border border-border/50">
                   {manualIndexFolder}
                 </div>
@@ -741,13 +742,13 @@ export default function Home() {
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={() => setIsManualIndexOpen(false)}>Cancelar</Button>
+              <Button variant="outline" onClick={() => setIsManualIndexOpen(false)}>{t('common.cancel')}</Button>
               <Button 
                 onClick={() => manualIndexMutation.mutate()}
                 disabled={!manualGameId || manualIndexMutation.isPending}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {manualIndexMutation.isPending ? 'Indexando...' : 'Confirmar e Salvar'}
+                {manualIndexMutation.isPending ? t('common.loading') : t('common.save')}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -3,10 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useStore } from '@/store/useStore';
+import { useTranslation } from '@/lib/i18n';
 import { Settings, Home, Gamepad2, WifiOff, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const { offlineMode } = useStore();
 
@@ -26,30 +28,30 @@ export default function Navbar() {
               href="/"
               className={`transition-colors hover:text-foreground/80 ${pathname === '/' ? 'text-foreground' : 'text-foreground/60'}`}
             >
-              <span className="flex items-center gap-2"><Home className="h-4 w-4" /> Home</span>
+              <span className="flex items-center gap-2"><Home className="h-4 w-4" /> {t('common.home')}</span>
             </Link>
             <Link
               href="/sideload"
               className={`transition-colors hover:text-foreground/80 ${pathname === '/sideload' ? 'text-foreground' : 'text-foreground/60'}`}
             >
-              <span className="flex items-center gap-2"><Gamepad2 className="h-4 w-4" /> Sideload</span>
+              <span className="flex items-center gap-2"><Gamepad2 className="h-4 w-4" /> {t('common.sideload')}</span>
             </Link>
             <Link
               href="/settings"
               className={`transition-colors hover:text-foreground/80 ${pathname === '/settings' ? 'text-foreground' : 'text-foreground/60'}`}
             >
-              <span className="flex items-center gap-2"><Settings className="h-4 w-4" /> Configurações</span>
+              <span className="flex items-center gap-2"><Settings className="h-4 w-4" /> {t('common.settings')}</span>
             </Link>
           </nav>
 
           <div className="hidden sm:flex items-center space-x-2 border-l border-border pl-4 ml-4">
             {offlineMode ? (
               <div className="flex items-center text-sm gap-2 text-destructive font-medium">
-                <WifiOff className="h-4 w-4" /> Offline Mode
+                <WifiOff className="h-4 w-4" /> {t('common.offlineMode')}
               </div>
             ) : (
               <div className="flex items-center text-sm gap-2 text-green-500 font-medium">
-                <Wifi className="h-4 w-4" /> Online
+                <Wifi className="h-4 w-4" /> {t('common.active')}
               </div>
             )}
           </div>

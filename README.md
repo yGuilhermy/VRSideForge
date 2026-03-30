@@ -5,6 +5,10 @@
 <h1 align="center">VR Rookie Downloader</h1>
 
 <p align="center">
+  🌐 <a href="README.md">Português</a> | <a href="README-EN.md">English</a>
+</p>
+
+<p align="center">
   Sistema avançado e automatizado para catálogo, download e instalação (sideloading) de conteúdo VR a partir do Rutracker.
 </p>
 
@@ -36,9 +40,10 @@ O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperat
 
 **Captura automatizada de metadados diretamente do fórum original**
 
-- Extração de **Gênero**, **Versão**, **Desenvolvedor** e estatísticas de **Seeds/Leechers**.
-- Tradução automática de títulos e descrições para Português.
-- **Interface Otimizada:** Botão para ocultar/mostrar a barra lateral de filtros para focar na visualização dos jogos.
+-   Extração de **Gênero**, **Versão**, **Desenvolvedor** e estatísticas de **Seeds/Leechers**.
+-   **Sistema Multi-idioma:** Interface disponível em **Inglês (padrão)** e **Português**, com troca dinâmica nas configurações.
+-   **Tradução Flexível:** Escolha o idioma de destino para as traduções dos jogos (Inglês ou Português).
+-   **Interface Otimizada:** Botão para ocultar/mostrar a barra lateral de filtros para focar na visualização dos jogos.
 
 ### Gestão de Downloads
 
@@ -107,6 +112,9 @@ _Execute como Administrador se desejar utilizar o domínio local `http://vrrooki
 ### 1. Configuração Inicial
 
 - Acesse a aba **Configurações**.
+- **Idioma da Interface:** Escolha entre Inglês ou Português para todos os menus e botões.
+- **Idioma de Tradução:** Selecione o idioma para o qual as descrições dos jogos (originalmente em russo) serão traduzidas.
+  - _Nota: Ao mudar o idioma de tradução, você pode usar a opção "Reconstruir Banco de Dados" no Painel Admin para atualizar os jogos já indexados._
 - Defina o caminho completo da pasta onde seus jogos serão baixados.
 - Realize o login no Rutracker através da interface para habilitar o scraper.
 

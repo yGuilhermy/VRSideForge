@@ -1,0 +1,299 @@
+{
+  "common": {
+    "settings": "Settings",
+    "home": "Home",
+    "sideload": "Sideload",
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search games...",
+    "offlineMode": "Offline Mode",
+    "downloadPath": "Download Directory",
+    "active": "Active",
+    "inactive": "Inactive",
+    "running": "Running",
+    "stopped": "Stopped",
+    "start": "Start",
+    "stop": "Stop",
+    "status": "Status"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Manage scraping, forum session, and preferences.",
+    "forumSession": {
+      "title": "Forum Session",
+      "description": "Source forum access. Required to index and search non-public information.",
+      "active": "Active Session",
+      "invalid": "Invalid Session",
+      "invalidDescription": "Start authentication to open the browser and log in manually.",
+      "reauthenticate": "Re-authenticate",
+      "login": "Login (Background)"
+    },
+    "offlineMode": {
+      "title": "Offline Mode",
+      "description": "Disables all requests to the external forum. Useful for purely local navigation.",
+      "label": "Enable Offline Mode",
+      "footer": "When enabled, the app will navigate faster using only the database."
+    },
+    "downloadPath": {
+      "title": "Download Directory",
+      "description": "Folder where the server will save games and check for existing files.",
+      "label": "Folder Path",
+      "placeholder": "E:\\VRGames",
+      "footer": "The system will create an .index.json file in this folder for automatic validation."
+    },
+    "indexer": {
+      "title": "Automatic Indexer (Worker)",
+      "description": "Control the automated process of searching and extracting games from the forum.",
+      "status": "Status",
+      "activity": "Current activity",
+      "none": "None",
+      "captchaTitle": "Attention! Captcha Required",
+      "captchaDescription": "The forum's anti-bot has been activated. Please solve the captcha to continue.",
+      "solveManual": "Solve Manually (Open Pop-up)",
+      "footer": "Smart update"
+    },
+    "language": {
+      "title": "Language Settings",
+      "description": "Configure the interface and translation languages.",
+      "interface": {
+        "label": "Interface Language",
+        "description": "Choose the language for the application interface."
+      },
+      "translation": {
+        "label": "Translation Language",
+        "description": "Choose the language for game descriptions and titles (scraped from the forum).",
+        "warning": "Warning: Changing the translation language with an existing database will require rebuilding the database to translate everything. Rebuilding individual game databases will also use this language."
+      }
+    }
+  },
+  "home": {
+    "search": {
+      "title": "Search",
+      "placeholder": "Search games..."
+    },
+    "sort": {
+      "title": "Sort",
+      "newest": "Newest (Recent)",
+      "alphabetical": "Alphabetical (A-Z)",
+      "seeds": "Most Seeds (Seeders)"
+    },
+    "translation": {
+      "title": "Translation",
+      "viewOriginal": "View Original",
+      "translateTitles": "Translate Titles"
+    },
+    "tools": {
+      "title": "Tools",
+      "hideFolders": "Hide Local Folders",
+      "showFolders": "Show Local Folders"
+    },
+    "filter": {
+      "genre": "Genre",
+      "developer": "Added by",
+      "all": "All",
+      "allGames": "Explore Everything",
+      "myGames": "My Games",
+      "wishlist": "Wishlist"
+    },
+    "sidebar": {
+      "hide": "Hide",
+      "show": "Show Filters"
+    },
+    "status": {
+      "showing": "Showing",
+      "games": "games",
+      "noGames": "No games found",
+      "noGamesDesc": "Try changing the filters or start the indexer in settings.",
+      "downloaded": "DOWNLOADED",
+      "predownload": "PREDOWNLOAD",
+      "downloading": "DOWNLOADING",
+      "installed": "Installed"
+    },
+    "folders": {
+      "title": "Physical Files on HD",
+      "directory": "Local Directory",
+      "noFolders": "No folders found in this directory.",
+      "checkSettings": "Check if the path is correct in Settings",
+      "indexed": "Indexed",
+      "clickToIndex": "Click to index"
+    },
+    "pagination": {
+      "itemsPerPage": "Items per page:",
+      "custom": "Custom",
+      "page": "Page",
+      "of": "of"
+    }
+  },
+  "sideload": {
+    "title": "Sideload",
+    "description": "Manage and install games directly on your Quest.",
+    "updateStatus": "Update Downloaded",
+    "updateConnection": "Update Connection",
+    "connectionStatus": {
+      "title": "Connection Status",
+      "noDevice": "No device found.",
+      "noDeviceDesc": "Connect your Quest via USB and enable developer mode.",
+      "storage": "Storage",
+      "free": "Free",
+      "total": "Total",
+      "usage": "Usage"
+    },
+    "install": {
+      "title": "Install on Device",
+      "found": "found",
+      "noPath": "Download folder not configured. Go to settings.",
+      "noGames": "No games in local folder to install.",
+      "inProgress": "IN PROGRESS",
+      "notIndexed": "NOT INDEXED",
+      "installed": "Installed",
+      "installing": "Installing...",
+      "waiting": "Waiting...",
+      "installOnQuest": "Install on Quest",
+      "onHold": "On hold",
+      "indexToEnable": "Index to enable",
+      "waitForCompletion": "Wait for completion"
+    },
+    "apps": {
+      "title": "Apps on Device",
+      "packagesDetected": "packages detected",
+      "selectDevice": "Select a device to see installed apps.",
+      "noApps": "No third-party packages found.",
+      "confirmUninstall": "Do you really want to uninstall {}?"
+    }
+  },
+  "game": {
+    "back": "Back",
+    "notFound": "Game not found",
+    "backHome": "Back to Home",
+    "sideloading": "Sideloading Progress",
+    "installingOnQuest": "Installing on Quest via USB...",
+    "downloadStatus": {
+      "finished": "Finished on PC",
+      "predownload": "Predownload",
+      "downloading": "Downloading",
+      "downloadServer": "Download on Server",
+      "downloadLocal": "Download Magnet (Local)"
+    },
+    "actions": {
+      "installOnQuest": "Install on Quest",
+      "connectQuest": "Connect Quest via USB",
+      "remove": "Remove from List",
+      "deleteFiles": "Delete Files",
+      "deleteConfirm": "This will permanently delete the files from the server. Are you sure?",
+      "viewPost": "View Original Post"
+    },
+    "stats": {
+      "seeds": "Seeds",
+      "leeches": "Leechers",
+      "downloads": "Downloads .torrent",
+      "updateData": "Update Data",
+      "selectMode": "Select mode",
+      "statsOnly": "Stats Only",
+      "statsOnlyDesc": "Updates Seeds, Leechers and download count.",
+      "fullRebuild": "Full Rebuild",
+      "fullRebuildDesc": "Fetches and rewrites all info from the original post.",
+      "rebuildConfirm": "This will rebuild EVERYTHING (description, image, tags). Continue?"
+    },
+    "description": {
+      "title": "Description",
+      "translateNow": "Translate Now",
+      "translating": "Translating...",
+      "translationDone": "Translation complete",
+      "translationFailed": "Failed to translate. Check backend.",
+      "viewOriginal": "View Original",
+      "viewTranslation": "View Translation",
+      "russianPost": "This post is in Russian.",
+      "clickTranslate": "Click the translation button to read in your language."
+    },
+    "installed": "This game is already in your downloads folder",
+    "wishlist": {
+      "title": "Your Wishlist",
+      "added": "Added to Wishlist",
+      "removed": "Removed from Wishlist"
+    }
+  },
+  "sidebar": {
+    "games": "Games",
+    "sideload": "Sideload",
+    "settings": "Settings",
+    "admin": "Admin",
+    "filters": "Filters",
+    "genres": "Genres",
+    "developers": "Developers",
+    "showMore": "Show More",
+    "showLess": "Show Less",
+    "toggleSidebar": "Toggle Sidebar"
+  },
+  "admin": {
+    "title": "Database Administration",
+    "description": "View and manually edit games inserted by the Scraper.",
+    "table": {
+      "id": "ID",
+      "title": "Title",
+      "meta": "Meta (Genre/Dev)",
+      "action": "Action",
+      "noData": "No data found.",
+      "total": "Total items",
+      "noGenre": "No Genre",
+      "noDev": "No Dev"
+    },
+    "actions": {
+      "export": "Export Backup",
+      "import": "Import Backup",
+      "importing": "Analyzing...",
+      "clear": "Clear Database",
+      "confirmClear": "Confirm clear {{count}}/5",
+      "clearWarning": "Warning: Are you sure? Faltam {{remaining}} confirmações para perder todos os dados."
+    },
+    "failed": {
+      "title": "Scraping Failures",
+      "description": "URLs that could not be processed due to errors.",
+      "noFailures": "No failures recorded.",
+      "retry": "Retry",
+      "retryAll": "Retry All",
+      "processing": "Processing queue...",
+      "status": "Items saved here will not appear in the main catalog until processed.",
+      "retryAllSuccess": "Bulk retry completed! Success: {{successes}}, Errors: {{errors}}"
+    },
+    "edit": {
+      "title": "Edit Game",
+      "description": "Change stored information (original title, tags) in the database.",
+      "labelTitle": "Title",
+      "genre": "Genre",
+      "developer": "Developer",
+      "publisher": "Publisher",
+      "version": "Version",
+      "languages": "Languages",
+      "playModes": "Play Modes",
+      "save": "Save Changes"
+    },
+    "backup": {
+      "title": "Import Database",
+      "description": "A valid backup was found. Continuing will DELETE your current database and apply the backup data.",
+      "details": {
+        "created": "Created",
+        "code": "Validation Code",
+        "files": "Files"
+      },
+      "confirm": "Delete Everything and Replace"
+    },
+    "rebuildAll": {
+      "button": "Rebuild All (Translation)",
+      "confirm": "This will re-scrape ALL games in the database to update translations to {{lang}}. This may take a long time and depends on your internet/session. Continue?",
+      "success": "Full rebuild started in background."
+    }
+  },
+  "footer": {
+    "description": "Automated system to catalog, download and locally install VR content.",
+    "navigation": "Navigation",
+    "info": "Information",
+    "legal": "Legal Disclaimer",
+    "poweredBy": "Powered by ADB",
+    "beta": "Beta Phase!",
+    "copyright": "All rights reserved",
+    "madeWith": "Made with",
+    "forEnthusiasts": "for Virtual Reality enthusiasts"
+  }
+}

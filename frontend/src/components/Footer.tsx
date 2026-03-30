@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Activity, Database, Zap, ExternalLink } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 const GithubIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -20,6 +21,7 @@ const GithubIcon = ({ className }: { className?: string }) => (
 );
 
 export default function Footer() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -33,7 +35,7 @@ export default function Footer() {
               <span className="text-xl font-bold tracking-tight">VR Rookie <span className="text-primary">Downloader</span></span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
-              Sistema automatizado para catalogar, baixar e instalar localmente conteúdo VR.
+              {t('footer.description')}
             </p>
             <div className="flex space-x-4 pt-2">
               <a 
@@ -56,26 +58,26 @@ export default function Footer() {
               </a>
             </div>
           </div>
-
+ 
           {/* Navigation Links */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">Navegação</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">{t('footer.navigation')}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link href="/" className="hover:text-primary transition-colors">Início</Link>
+                <Link href="/" className="hover:text-primary transition-colors">{t('common.home')}</Link>
               </li>
               <li>
-                <Link href="/sideload" className="hover:text-primary transition-colors">Sideload</Link>
+                <Link href="/sideload" className="hover:text-primary transition-colors">{t('common.sideload')}</Link>
               </li>
               <li>
-                <Link href="/settings" className="hover:text-primary transition-colors">Configurações</Link>
+                <Link href="/settings" className="hover:text-primary transition-colors">{t('common.settings')}</Link>
               </li>
             </ul>
           </div>
-
+ 
           {/* Legal/Info */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">Informações</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground">{t('footer.info')}</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <a 
@@ -85,7 +87,7 @@ export default function Footer() {
                   className="flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   <Database className="h-3 w-3" /> 
-                  <span>Aviso Legal</span>
+                  <span>{t('footer.legal')}</span>
                 </a>
               </li>
               <li>
@@ -96,7 +98,7 @@ export default function Footer() {
                   className="flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   <Zap className="h-3 w-3 text-yellow-500" />
-                  <span>Powered by ADB</span>
+                  <span>{t('footer.poweredBy')}</span>
                 </a>
               </li>
               <li>
@@ -107,18 +109,18 @@ export default function Footer() {
                   className="flex items-center gap-2 hover:text-primary transition-colors"
                 >
                   <Activity className="h-3 w-3" /> 
-                  <span>Fase Beta!</span>
+                  <span>{t('footer.beta')}</span>
                 </a>
               </li>
             </ul>
           </div>
         </div>
-
+ 
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-          <p>© {currentYear} VR Rookie Downloader · Todos os direitos reservados · By <a href="https://github.com/yGuilhermy" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">@yGuilhermy</a>.</p>
+          <p>© {currentYear} VR Rookie Downloader · {t('footer.copyright')} · By <a href="https://github.com/yGuilhermy" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">@yGuilhermy</a>.</p>
           <div className="flex items-center gap-1">
-            Feito com <Activity className="h-3 w-3 text-red-500 fill-red-500" /> para entusiastas de Realidade Virtual
+            {t('footer.madeWith')} <Activity className="h-3 w-3 text-red-500 fill-red-500" /> {t('footer.forEnthusiasts')}
           </div>
         </div>
       </div>

@@ -12,7 +12,7 @@ import WebTorrent from 'webtorrent';
 import parseTorrent from 'parse-torrent';
 import { launchBrowser, closeBrowser, saveCookies } from './scraper/browser';
 import { translateText } from './utils/translate';
-import { startScraper, stopScraper, getStatus, submitCaptcha, updateGame, retryFailedGame, retryAllFailedGames } from './scraper/worker';
+import { startScraper, stopScraper, getStatus, submitCaptcha, updateGame, retryFailedGame, retryAllFailedGames, rebuildAll } from './scraper/worker';
 import { initDb, getDb, closeDb } from './db/sqlite';
 import { loginToRutracker } from './scraper/auth';
 import {
@@ -83,9 +83,9 @@ function loadSettings() {
   if (fs.existsSync(CONFIG_FILE)) {
     try {
       return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-    } catch { return { downloadPath: 'E:\\VRGames' }; }
+    } catch { return { downloadPath: 'E:\\VRGames', translationLanguage: 'pt' }; }
   }
-  return { downloadPath: 'E:\\VRGames' };
+  return { downloadPath: 'E:\\VRGames', translationLanguage: 'pt' };
 }
 
 function saveSettings(settings: any) {
@@ -93,6 +93,11 @@ function saveSettings(settings: any) {
 }
 
 let globalDownloadPath = loadSettings().downloadPath;
+let globalTranslationLanguage = loadSettings().translationLanguage || 'pt';
+
+export function getTranslationLanguage() {
+  return globalTranslationLanguage;
+}
 const wt = new WebTorrent();
 
 function getInventoryPath(dir: string) {
@@ -643,10 +648,13 @@ app.post('/api/translate/:id', async (req, res) => {
   if (!game) return res.status(404).json({ error: 'Game not found' });
   
   if (game.translated_description) {
+    // Only return if translation is already there. 
+    // Actually, user said rebuild db handles it, but maybe we should allow re-translation if language changed?
+    // For now, let's just use the current logic but with the dynamic language.
     return res.json({ translated_description: game.translated_description });
   }
   
-  const translated = await translateText(game.description, 'pt');
+  const translated = await translateText(game.description, globalTranslationLanguage);
   await db.run('UPDATE games SET translated_description = ? WHERE id = ?', [translated, game.id]);
   res.json({ translated_description: translated });
 });
@@ -685,6 +693,15 @@ app.post('/api/scraper/failed/:id/retry', async (req, res) => {
 app.post('/api/scraper/failed/retry-all', async (req, res) => {
   try {
     const result = await retryAllFailedGames();
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/scraper/rebuild-all', async (req, res) => {
+  try {
+    const result = await rebuildAll();
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -822,32 +839,37 @@ app.post('/api/torrent/download', async (req, res) => {
 });
 
 app.get('/api/settings', (req, res) => {
-  res.json({ downloadPath: globalDownloadPath });
+  res.json({ downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage });
 });
 
 app.post('/api/settings', async (req, res) => {
-  const { downloadPath } = req.body;
-  if (!downloadPath) return res.status(400).json({ error: 'Caminho obrigatório' });
-
+  const { downloadPath, translationLanguage } = req.body;
+  
   try {
-    const targetPath = path.resolve(downloadPath);
-    if (!fs.existsSync(targetPath)) {
-      fs.mkdirSync(targetPath, { recursive: true });
-    }
-    
-    globalDownloadPath = targetPath;
-    saveSettings({ downloadPath: globalDownloadPath });
+    if (downloadPath) {
+      const targetPath = path.resolve(downloadPath);
+      if (!fs.existsSync(targetPath)) {
+        fs.mkdirSync(targetPath, { recursive: true });
+      }
+      globalDownloadPath = targetPath;
 
-    const indexPath = path.join(targetPath, '.index.json');
-    if (!fs.existsSync(indexPath)) {
-      fs.writeFileSync(indexPath, JSON.stringify({ downloads: {} }, null, 2));
-      console.log(`[FS] Created index file at ${indexPath}`);
+      const indexPath = path.join(targetPath, '.index.json');
+      if (!fs.existsSync(indexPath)) {
+        fs.writeFileSync(indexPath, JSON.stringify({ downloads: {} }, null, 2));
+        console.log(`[FS] Created index file at ${indexPath}`);
+      }
+    }
+
+    if (translationLanguage) {
+      globalTranslationLanguage = translationLanguage;
     }
     
-    res.json({ success: true, downloadPath: globalDownloadPath });
+    saveSettings({ downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage });
+    
+    res.json({ success: true, downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage });
   } catch (err: any) {
-    console.error(`[FS] Error setting download path: ${err.message}`);
-    res.status(500).json({ error: 'Erro ao configurar diretório: ' + err.message });
+    console.error(`[FS] Error saving settings: ${err.message}`);
+    res.status(500).json({ error: 'Erro ao salvar configurações: ' + err.message });
   }
 });
 

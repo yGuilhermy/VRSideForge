@@ -22,7 +22,7 @@ backend/data/*
 *.sqlite
 
 # config
-backend/config.json
+backend\config.json
 
 # Environment variables
 .env
