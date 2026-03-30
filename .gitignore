@@ -21,6 +21,9 @@ backend/data/*
 *.db
 *.sqlite
 
+# config
+backend/config.json
+
 # Environment variables
 .env
 .env.local
