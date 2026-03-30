@@ -109,19 +109,19 @@ _Run as Administrator if you want to use the local domain `http://vrrookie.local
 
 ## Usage Guide
 
-### 1. Initial Configuration
+### 1. Initial Configuration (Setup Wizard)
 
-- Access the **Settings** tab.
-- **Interface Language:** Choose between English or Portuguese for all menus and buttons.
-- **Translation Language:** Select the language to which game descriptions (originally in Russian) will be translated.
-  - _Note: When changing the translation language, you can use the "Rebuild Database" option in the Admin Panel to update already indexed games._
-- Set the full path of the folder where your games will be downloaded.
-- Log in to Rutracker through the interface to enable the scraper.
+When you open the app for the first time, you'll be guided by the **Setup Wizard**. This automated process validates:
+- **Language:** Interface preferences and library translation.
+- **ADB:** Presence of the executable in the system PATH.
+- **qBittorrent:** WebUI connection and process status.
+- **RuTracker:** Authentication and session validity.
+- **Directory:** Games folder path.
 
 ### 2. Catalog and Download
 
-- **Search Customization:** You can change the default search terms (such as "Quest 3", "PCVR") by editing `baseQueries` in the `backend/src/scraper/worker.ts` file (lines 231-235).
-- Use the **Start Indexer** button to fetch new titles from the forum.
+- **Search Customization:** You can change default search terms by editing `baseQueries` in `backend/src/scraper/worker.ts` (lines 231-235).
+- Use the **Start Indexer** button (available at the end of Setup or in Settings) to fetch new titles from the forum.
 - Click on the game card to open details and click **Download on Server**.
 - The game will be automatically sent to your qBitTorrent.
 

@@ -109,19 +109,19 @@ _Execute como Administrador se desejar utilizar o domínio local `http://vrrooki
 
 ## Guia de Uso
 
-### 1. Configuração Inicial
+### 1. Configuração Inicial (Setup Wizard)
 
-- Acesse a aba **Configurações**.
-- **Idioma da Interface:** Escolha entre Inglês ou Português para todos os menus e botões.
-- **Idioma de Tradução:** Selecione o idioma para o qual as descrições dos jogos (originalmente em russo) serão traduzidas.
-  - _Nota: Ao mudar o idioma de tradução, você pode usar a opção "Reconstruir Banco de Dados" no Painel Admin para atualizar os jogos já indexados._
-- Defina o caminho completo da pasta onde seus jogos serão baixados.
-- Realize o login no Rutracker através da interface para habilitar o scraper.
+Ao abrir o aplicativo pela primeira vez, você será guiado pelo **Assistente de Configuração (Setup Wizard)**. Este processo automatizado validará:
+- **Idioma:** Preferências de interface e tradução da biblioteca.
+- **ADB:** Presença do executável no PATH do sistema.
+- **qBittorrent:** Conexão com o WebUI e status do processo.
+- **RuTracker:** Autenticação e validade da sessão.
+- **Diretório:** Caminho da pasta de jogos.
 
 ### 2. Catálogo e Download
 
-- **Personalização de Busca:** Você pode alterar os termos de pesquisa padrão (como "Quest 3", "PCVR") editando as `baseQueries` no arquivo `backend/src/scraper/worker.ts` (linhas 231-235).
-- Utilize o botão **Iniciar Indexador** para buscar novos títulos do fórum.
+- **Personalização de Busca:** Você pode alterar os termos de pesquisa padrão editando as `baseQueries` no arquivo `backend/src/scraper/worker.ts` (linhas 231-235).
+- Utilize o botão **Iniciar Indexador** (disponível ao final do Setup ou em Configurações) para buscar novos títulos do fórum.
 - Clique no card do jogo para abrir os detalhes e clique em **Baixar no Servidor**.
 - O jogo será enviado automaticamente para o seu qBitTorrent.
 
