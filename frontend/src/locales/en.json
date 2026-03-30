@@ -295,5 +295,49 @@
     "copyright": "All rights reserved",
     "madeWith": "Made with",
     "forEnthusiasts": "for Virtual Reality enthusiasts"
+  },
+  "setup": {
+    "title": "Welcome to VR Rookie",
+    "description": "Let's configure your environment in a few steps",
+    "skip": "Skip",
+    "next": "Next",
+    "finish": "Finish Setup",
+    "back": "Back",
+    "step1": {
+      "title": "Language",
+      "description": "Select the language for the interface and the games library.",
+      "interface": "Interface",
+      "translation": "Library"
+    },
+    "step2": {
+      "title": "ADB & Device",
+      "description": "Checking if Android Debug Bridge (ADB) is installed.",
+      "successAll": "Complete: ADB and Device found!",
+      "successPathOnly": "ADB Found! No connected device detected.",
+      "fail": "ADB is missing in Environment Variables. The 'adb' command is not recognized in Terminal."
+    },
+    "step3": {
+      "title": "qBittorrent Engine",
+      "description": "Testing qBittorrent WebUI connection (localhost:8080).",
+      "success": "Connected! WebUI responding perfectly.",
+      "failNotRunning": "qBittorrent doesn't seem to be running. Open it and try again.",
+      "failRunningNoWebUI": "Warning: qBittorrent is running but WebUI is off. To fix:\n1. Open Tools > Options > Web UI.\n2. Enable Web UI.\n3. Set IP to 127.0.0.1 and Port to 8080.\n4. Keep Username and Password as admin/adminadmin."
+    },
+    "step4": {
+      "title": "RuTracker Session",
+      "description": "The games source. Authenticate to enable downloads.",
+      "loginBtn": "Open Manual Login",
+      "success": "Active Session"
+    },
+    "step5": {
+      "title": "Games Folder",
+      "description": "Where your games will be saved and extracted.",
+      "path": "Folder Path"
+    },
+    "step6": {
+      "title": "Indexer",
+      "description": "Start scraping the games library from the forum. You can do this later.",
+      "startScraper": "Start Indexer"
+    }
   }
 }

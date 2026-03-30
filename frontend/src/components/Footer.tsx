@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Activity, Database, Zap, ExternalLink } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n';
+import { usePathname } from 'next/navigation';
 
 const GithubIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -22,7 +23,10 @@ const GithubIcon = ({ className }: { className?: string }) => (
 
 export default function Footer() {
   const { t } = useTranslation();
+  const pathname = usePathname();
   const currentYear = new Date().getFullYear();
+
+  if (pathname === '/setup') return null;
 
   return (
     <footer className="w-full border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 mt-auto">

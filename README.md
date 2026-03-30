@@ -30,7 +30,7 @@ O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperat
 
 ## TLDR; Jogos no seu VR em poucos passos
 
-1. Configure sua pasta de downloads e autentique no Rutracker.
+1. Abra o aplicativo e siga o **Assistente de Configuração Inicial (Setup Wizard)** para validar sua sessão, dependências (ADB/qBittorrent) e idioma.
 2. Inicie o indexador para construir seu catálogo.
 3. Escolha um jogo, baixe via qBitTorrent e instale no Quest via USB.
 

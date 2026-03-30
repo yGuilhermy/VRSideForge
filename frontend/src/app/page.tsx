@@ -15,6 +15,7 @@ import { Search, HardDriveDownload, ImageOff, ChevronLeft, ChevronRight, Heart, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 interface Game {
@@ -51,16 +52,20 @@ export default function Home() {
   const { offlineMode, downloadPath, setDownloadPath } = useStore();
   const queryClient = useQueryClient();
 
+  const router = useRouter();
+
   const { data: serverSettings } = useQuery({
     queryKey: ['settings'],
     queryFn: async () => (await api.get('/settings')).data,
   });
 
   useEffect(() => {
-    if (serverSettings?.downloadPath) {
+    if (serverSettings?.start) {
+      router.push('/setup');
+    } else if (serverSettings?.downloadPath) {
       setDownloadPath(serverSettings.downloadPath);
     }
-  }, [serverSettings, setDownloadPath]);
+  }, [serverSettings, setDownloadPath, router]);
 
   useEffect(() => {
     const socket = io();

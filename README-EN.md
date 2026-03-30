@@ -30,7 +30,7 @@
 
 ## TLDR; Games on your VR in a few steps
 
-1. Configure your download folder and authenticate with Rutracker.
+1. Open the app and follow the **Initial Setup Wizard** to validate your session, dependencies (ADB/qBittorrent) and language.
 2. Start the indexer to build your catalog.
 3. Choose a game, download via qBitTorrent, and install on Quest via USB.
 

@@ -5,6 +5,10 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { URLSearchParams } from 'url';
 import fs from 'fs';
+import { exec } from 'child_process';
+import util from 'util';
+
+const execAsync = util.promisify(exec);
 import path from 'path';
 import AdmZip from 'adm-zip';
 import multer from 'multer';
@@ -22,7 +26,8 @@ import {
   installApp,
   uninstallApp,
   pushObb,
-  getApkPackageName
+  getApkPackageName,
+  checkAdbPath
 } from './utils/adb';
 import { Bonjour } from 'bonjour-service';
 import mdns from 'multicast-dns';
@@ -81,10 +86,11 @@ const CONFIG_FILE = path.join(process.cwd(), 'config.json');
 
 function loadSettings() {
   const defaults = { 
-    downloadPath: 'E:\\VRGames', 
+    downloadPath: 'E:\\\\VRGames', 
     translationLanguage: 'pt',
     interfaceLanguage: 'en',
-    offlineMode: false
+    offlineMode: false,
+    start: true
   };
 
   if (fs.existsSync(CONFIG_FILE)) {
@@ -109,6 +115,7 @@ let globalDownloadPath = settings.downloadPath;
 let globalTranslationLanguage = settings.translationLanguage;
 let globalInterfaceLanguage = settings.interfaceLanguage;
 let globalOfflineMode = settings.offlineMode;
+let globalStart = settings.start;
 
 export function getTranslationLanguage() {
   return globalTranslationLanguage;
@@ -854,11 +861,16 @@ app.post('/api/torrent/download', async (req, res) => {
 });
 
 app.get('/api/settings', (req, res) => {
-  res.json({ downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage });
+  res.json({ 
+    downloadPath: globalDownloadPath, 
+    translationLanguage: globalTranslationLanguage,
+    interfaceLanguage: globalInterfaceLanguage,
+    start: globalStart 
+  });
 });
 
 app.post('/api/settings', async (req, res) => {
-  const { downloadPath, translationLanguage } = req.body;
+  const { downloadPath, translationLanguage, interfaceLanguage, start } = req.body;
   
   try {
     if (downloadPath) {
@@ -878,13 +890,51 @@ app.post('/api/settings', async (req, res) => {
     if (translationLanguage) {
       globalTranslationLanguage = translationLanguage;
     }
+    if (interfaceLanguage) {
+      globalInterfaceLanguage = interfaceLanguage;
+    }
+    if (typeof start === 'boolean') {
+      globalStart = start;
+    }
     
-    saveSettings({ downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage });
+    saveSettings({ 
+      downloadPath: globalDownloadPath, 
+      translationLanguage: globalTranslationLanguage,
+      interfaceLanguage: globalInterfaceLanguage,
+      start: globalStart
+    });
     
-    res.json({ success: true, downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage });
+    res.json({ success: true, downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage, interfaceLanguage: globalInterfaceLanguage, start: globalStart });
   } catch (err: any) {
     console.error(`[FS] Error saving settings: ${err.message}`);
     res.status(500).json({ error: 'Erro ao salvar configurações: ' + err.message });
+  }
+});
+
+app.get('/api/torrent/check', async (req, res) => {
+  try {
+    let isRunning = false;
+    let webUiWorking = false;
+    
+    // Check Process
+    try {
+      const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq qbittorrent.exe"');
+      isRunning = stdout.toLowerCase().includes('qbittorrent.exe');
+    } catch (e) { }
+
+    // Check WebUI
+    try {
+      if (!qbitCookie) await loginQbit();
+      await axios.get('http://localhost:8080/api/v2/app/version', {
+        headers: { 'Cookie': qbitCookie },
+        timeout: 2000
+      });
+      webUiWorking = true;
+    } catch (err) { }
+
+    res.json({ isRunning, webUiWorking });
+  } catch (err) {
+    res.json({ isRunning: false, webUiWorking: false });
   }
 });
 
@@ -963,6 +1013,15 @@ app.get('/api/adb/devices', async (req, res) => {
     res.json({ devices });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/adb/check-path', async (req, res) => {
+  try {
+    const present = await checkAdbPath();
+    res.json({ present });
+  } catch (err: any) {
+    res.json({ present: false });
   }
 });
 

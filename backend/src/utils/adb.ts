@@ -17,6 +17,15 @@ export const getAdbDevices = async () => {
   }
 };
 
+export const checkAdbPath = async () => {
+  try {
+    const { stdout } = await execAsync('adb --version');
+    return stdout.includes('Android Debug Bridge version');
+  } catch (e) {
+    return false;
+  }
+};
+
 export const getInstalledApps = async (deviceId?: string) => {
   try {
     const deviceFlag = deviceId ? `-s ${deviceId}` : '';

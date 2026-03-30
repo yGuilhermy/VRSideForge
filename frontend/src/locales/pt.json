@@ -295,5 +295,49 @@
     "copyright": "Todos os direitos reservados",
     "madeWith": "Feito com",
     "forEnthusiasts": "para entusiastas de Realidade Virtual"
+  },
+  "setup": {
+    "title": "Bem-vindo ao VR Rookie",
+    "description": "Vamos configurar seu ambiente em poucos passos",
+    "skip": "Pular",
+    "next": "Próximo",
+    "finish": "Concluir Setup",
+    "back": "Voltar",
+    "step1": {
+      "title": "Idioma",
+      "description": "Selecione a língua para a interface e para a biblioteca.",
+      "interface": "Interface",
+      "translation": "Biblioteca"
+    },
+    "step2": {
+      "title": "ADB & Dispositivo",
+      "description": "Verificamos se o ADB (Android Debug Bridge) está no seu PATH.",
+      "successAll": "Completo: ADB e Dispositivo encontrados!",
+      "successPathOnly": "ADB Encontrado. Nenhum dispositivo conectado agora.",
+      "fail": "ADB ausente nas Variáveis de Ambiente do computador. O terminal não encontra o comando 'adb'."
+    },
+    "step3": {
+      "title": "qBittorrent Engine",
+      "description": "Testando conexão com qBittorrent WebUI (localhost:8080).",
+      "success": "Conectado! WebUI respondendo perfeitamente.",
+      "failNotRunning": "O programa qBittorrent não parece estar aberto no sistema. Abra-o e tente novamente.",
+      "failRunningNoWebUI": "Atenção: O qBittorrent está rodando, mas a WebUI está desligada. Para corrigir:\n1. Vá em Ferramentas > Opções > Web UI.\n2. Habilite a Interface.\n3. Defina IP para 127.0.0.1 e Porta para 8080.\n4. Se possível, mantenha Usuário e Senha como admin/adminadmin."
+    },
+    "step4": {
+      "title": "Sessão RuTracker",
+      "description": "A fonte dos jogos. Autentique para liberar os downloads.",
+      "loginBtn": "Abrir Login Manual",
+      "success": "Sessão Ativa"
+    },
+    "step5": {
+      "title": "Pasta de Jogos",
+      "description": "Onde os jogos serão salvos e extraídos.",
+      "path": "Caminho da Pasta"
+    },
+    "step6": {
+      "title": "Indexador",
+      "description": "Começar a baixar a lista de jogos do fórum (Scraping). Você pode fazer isso depois.",
+      "startScraper": "Iniciar Indexador"
+    }
   }
 }
