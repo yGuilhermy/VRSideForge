@@ -22,8 +22,8 @@ if %errorlevel% neq 0 (
 where adb >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
-    echo [!] ADB (Android Debug Bridge) not found in PATH.
-    echo Downloading official ADB (Platform Tools)...
+    echo [!] ADB - Android Debug Bridge - not found in PATH.
+    echo Downloading official ADB - Platform Tools...
     
     set "ADB_DIR=%USERPROFILE%\Documents\VRRookieDownloader\adb"
     if not exist "!ADB_DIR!" mkdir "!ADB_DIR!"
@@ -45,12 +45,12 @@ if %errorlevel% neq 0 (
         echo [INFO] Adding '!ADB_DIR!' to temporary session PATH...
         set "PATH=%PATH%;!ADB_DIR!"
         
-        echo [INFO] Adding permanently to user PATH (via setx)...
+        echo [INFO] Adding permanently to user PATH - via setx...
         setx PATH "%PATH%;!ADB_DIR!" >nul
         
         echo.
         echo [OK] ADB installed and configured successfully!
-        echo (IMPORTANT: If Sideload features do not work immediately, the system will use the fallback path.)
+        echo IMPORTANT: If Sideload features do not work immediately, the system will use the fallback path.
     )
     echo.
 ) else (
@@ -65,23 +65,26 @@ if %errorlevel% neq 0 (
         echo OK! qBitTorrent found at C:\Program Files\qBittorrent.
     ) else (
         echo [!] qBitTorrent not detected on the system.
-        echo Attempting to install via Winget (Windows Package Manager)...
+        echo Attempting to install via Winget - Windows Package Manager...
         
         winget --version >nul 2>nul
-        if %errorlevel% == 0 (
+        if !errorlevel! equ 0 (
             echo [1/2] Starting silent installation via Winget...
             winget install --id qBittorrent.qBittorrent --silent --accept-package-agreements --accept-source-agreements
-            if %errorlevel% == 0 (
+            if !errorlevel! equ 0 (
                 echo [2/2] qBitTorrent installed successfully!
+                set "QBIT_INSTALLED=1"
             ) else (
                 echo [!] Winget installation failed. Attempting direct download...
-                goto :manual_qbit
             )
         ) else (
-            :manual_qbit
+            echo [!] Winget not found. Attempting direct download...
+        )
+        
+        if not defined QBIT_INSTALLED (
             echo [1/2] Downloading qBitTorrent installer...
             powershell -Command "Invoke-WebRequest -Uri 'https://managedway.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.3/qbittorrent_4.6.3_x64_setup.exe' -OutFile 'qbit_setup.exe'"
-            echo [2/2] Running installer (this may take a few minutes)...
+            echo [2/2] Running installer - this may take a few minutes...
             start /wait qbit_setup.exe /S
             del /f /q qbit_setup.exe
             echo [OK] qBitTorrent installed successfully!
