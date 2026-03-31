@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Sistema avançado e automatizado para catálogo, download e instalação (sideloading) de conteúdo VR a partir do Rutracker.
+  Advanced and automated system for cataloging, downloading, and sideloading VR content from Rutracker.
 </p>
 
 <p align="center">
@@ -18,129 +18,130 @@
   <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/></a>
 </p>
 
-## Aviso Legal (Disclaimer)
+## Legal Disclaimer
 
-O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperativo compreender a natureza do software:
+**VR Rookie Downloader** is a technical indexing tool. It is imperative to understand the nature of the software:
 
-- **Apenas Indexação:** Este sistema não hospeda, armazena ou distribui qualquer tipo de conteúdo protegido por direitos autorais. O software funciona exclusivamente como um rastreador (scraper) que organiza metadados de fontes de terceiros (Fórum Rutracker).
-- **Isenção de Responsabilidade:** O projeto é fornecido "como está", sem garantias de qualquer tipo. O uso desta ferramenta para acessar ou baixar conteúdo é de inteira e exclusiva responsabilidade do usuário final.
-- **Propriedade Intelectual:** Respeitamos os direitos de propriedade intelectual. Caso você seja proprietário de algum conteúdo e deseja que ele não seja acessível através dos meios de busca padrão, por favor, entre em contato com as fontes originais indexadas.
-- **Desenvolvimento:** Este aplicativo foi construído com o auxílio de ferramentas de IA para otimização de código e design.
-- **Finalidade:** O software foi desenhado para facilitar a organização de bibliotecas VR pessoais e estudos técnicos de automação de sistemas.
+- **Indexing Only:** This system does not host, store, or distribute any type of copyrighted content. The software works exclusively as a scraper that organizes metadata from third-party sources (Rutracker Forum).
+- **Disclaimer:** The project is provided "as is", without warranties of any kind. The use of this tool to access or download content is the sole and exclusive responsibility of the end user.
+- **Intellectual Property:** We respect intellectual property rights. If you are the owner of any content and wish for it not to be accessible through standard search means, please contact the original indexed sources.
+- **Development:** This application was built with the help of AI tools for code and design optimization.
+- **Purpose:** The software was designed to facilitate the organization of personal VR libraries and technical studies of systems automation.
 
-## TLDR; Jogos no seu VR em poucos passos
+## TLDR; Games on your VR in a few steps
 
-1. Abra o aplicativo e siga o **Assistente de Configuração Inicial (Setup Wizard)** para validar sua sessão, dependências (ADB/qBittorrent) e idioma.
-2. Inicie o indexador para construir seu catálogo.
-3. Escolha um jogo, baixe via qBitTorrent e instale no Quest via USB.
+1. Open the app and follow the **Initial Setup Wizard** to validate your session, dependencies (ADB/qBittorrent) and language.
+2. Start the indexer to build your catalog.
+3. Choose a game, download via qBitTorrent, and install on Quest via USB.
 
-## Funcionalidades Dinâmicas
+## Dynamic Features
 
-### Indexação de Links do Rutracker
+### Rutracker Link Indexing
 
-**Captura automatizada de metadados diretamente do fórum original**
+**Automated metadata capture directly from the original forum**
 
--   Extração de **Gênero**, **Versão**, **Desenvolvedor** e estatísticas de **Seeds/Leechers**.
--   **Sistema Multi-idioma:** Interface disponível em **Inglês (padrão)** e **Português**, com troca dinâmica nas configurações.
--   **Tradução Flexível:** Escolha o idioma de destino para as traduções dos jogos (Inglês ou Português).
--   **Interface Otimizada:** Botão para ocultar/mostrar a barra lateral de filtros para focar na visualização dos jogos.
+- Extraction of **Genre**, **Version**, **Developer**, and **Seeds/Leechers** statistics.
+- **Multi-language System:** Interface available in **English (default)** and **Portuguese**, with dynamic switching in settings.
+- **Flexible Translation:** Choose the destination language for game translations (English or Portuguese).
+- **Optimized Interface:** Toggle button to hide/show the filter sidebar to focus on game viewing.
 
-### Gestão de Downloads
+### Download Management
 
-**Integração total com o qBitTorrent Web UI**
+**Full integration with qBitTorrent Web UI**
 
-- Controle remoto de downloads.
-- Monitoramento de progresso em tempo real diretamente na biblioteca.
-- Sincronização automática entre arquivos físicos no HD e o banco de dados.
+- Remote control of downloads.
+- Real-time progress monitoring directly in the library.
+- Automatic synchronization between physical files on the HDD and the database.
 
 ### Sideloading
 
-**Instalação nativa via ADB (Android Debug Bridge)**
+**Native installation via ADB (Android Debug Bridge)**
 
-- Transferência automatizada de arquivos APK e pastas de dados (OBB).
-- Suporte para múltiplos dispositivos detectados via USB.
+- Automated transfer of APK files and data folders (OBB).
+- Support for multiple devices detected via USB.
 
-## Instalação (Manual)
+## Installation (Manual)
 
-> Aviso: O projeto está em fase de desenvolvimento e pode conter bugs.
+> Warning: The project is in development phase and may contain bugs.
 
-**A instalação requer configuração prévia de dependências do sistema. Siga o processo abaixo.**
+**Installation requires prior configuration of system dependencies. Follow the process below.**
 
 <details>
-<summary>Clique para ver o processo de instalação</summary>
+<summary>Click to view the installation process</summary>
 
-### 1. Requisitos do Sistema
+### 1. System Requirements
 
-- **[Node.js](https://nodejs.org/):** Versão 18.x ou superior.
-- **[qBitTorrent](https://www.qbittorrent.org/):** É necessário configurar a **Web UI** para que o app possa gerenciar os downloads:
-  1. Abra o qBitTorrent e vá em `Ferramentas` -> `Opções` -> `Web UI`.
-  2. Marque a caixa **Interface de Usuário da Web (Controle Remoto)**.
-  3. No campo **Endereço IP**, use `127.0.0.1` e na **Porta**, use `8080` (padrão do projeto).
-  4. Em **Autenticação**, verifique se o usuário é `admin`.
-  5. **Senha:** O projeto está configurado para usar a senha padrão `adminadmin`. Caso deseje usar outra, você precisará atualizar a função `loginQbit` no arquivo `backend/src/index.ts`.
-  6. (Opcional) Marque **Ignorar autenticação para clientes no host local** para simplificar a conexão.
-- **[ADB (Android Debug Bridge)](https://developer.android.com/tools/adb):** O binário `adb` **DEVE** estar configurado no **PATH** do sistema operacional.
+- **[Node.js](https://nodejs.org/):** Version 18.x or higher.
+- **[qBitTorrent](https://www.qbittorrent.org/):** You must configure the **Web UI** for the app to manage downloads:
+  1. Open qBitTorrent and go to `Tools` -> `Options` -> `Web UI`.
+  2. Check the **Web User Interface (Remote Control)** box.
+  3. In the **IP Address** field, use `127.0.0.1` and in the **Port**, use `8080` (project default).
+  4. In **Authentication**, verify if the user is `admin`.
+  5. **Password:** The project is configured to use the default password `adminadmin`. To use another one, you need to update the `loginQbit` function in the `backend/src/index.ts` file.
+  6. (Optional) Check **Bypass authentication for clients on localhost** to simplify the connection.
+- **[ADB (Android Debug Bridge)](https://developer.android.com/tools/adb):** The `adb` binary **MUST** be configured in the system's **PATH**.
 
-### 2. Configuração do Ambiente
+### 2. Environment Configuration
 
-Clone o repositório e execute o instalador automatizado:
+Clone the repository and run the automated installer:
 
 ```powershell
-git clone https://github.com/usuario/VRRookieDownloader.git
+git clone https://github.com/user/VRRookieDownloader.git
 cd VRRookieDownloader
 .\setup.bat
 ```
 
-O script de setup verificará a presença do Node.js e do ADB no seu PATH antes de instalar as dependências do projeto.
+The setup script will check for Node.js and ADB in your PATH before installing project dependencies.
 
 ---
 
-### Execução
+### Execution
 
-Para iniciar o projeto:
+To start the project:
 
 ```powershell
 .\start.bat
 ```
 
-_Execute como Administrador se desejar utilizar o domínio local `http://vrrookie.local`._
+_Run as Administrator if you want to use the local domain `http://vrrookie.local`._
 
 </details>
 
-## Guia de Uso
+## Usage Guide
 
-### 1. Configuração Inicial (Setup Wizard)
+### 1. Initial Configuration (Setup Wizard)
 
-Ao abrir o aplicativo pela primeira vez, você será guiado pelo **Assistente de Configuração (Setup Wizard)**. Este processo automatizado validará:
-- **Idioma:** Preferências de interface e tradução da biblioteca.
-- **ADB:** Presença do executável no PATH do sistema.
-- **qBittorrent:** Conexão com o WebUI e status do processo.
-- **RuTracker:** Autenticação e validade da sessão.
-- **Diretório:** Caminho da pasta de jogos.
+When you open the app for the first time, you'll be guided by the **Setup Wizard**. This automated process validates:
 
-### 2. Catálogo e Download
+- **Language:** Interface preferences and library translation.
+- **ADB:** Presence of the executable in the system PATH.
+- **qBittorrent:** WebUI connection and process status.
+- **RuTracker:** Authentication and session validity.
+- **Directory:** Games folder path.
 
-- **Personalização de Busca:** Você pode alterar os termos de pesquisa padrão editando as `baseQueries` no arquivo `backend/src/scraper/worker.ts` (linhas 231-235).
-- Utilize o botão **Iniciar Indexador** (disponível ao final do Setup ou em Configurações) para buscar novos títulos do fórum.
-- Clique no card do jogo para abrir os detalhes e clique em **Baixar no Servidor**.
-- O jogo será enviado automaticamente para o seu qBitTorrent.
+### 2. Catalog and Download
 
-### 3. Instalação (Sideloading)
+- **Search Customization:** You can change default search terms by editing `baseQueries` in `backend/src/scraper/worker.ts` (lines 231-235).
+- Use the **Start Indexer** button (available at the end of Setup or in Settings) to fetch new titles from the forum.
+- Click on the game card to open details and click **Download on Server**.
+- The game will be automatically sent to your qBitTorrent.
 
-- Com o download concluído no PC, conecte seu headset VR via USB.
-- No menu do jogo baixado, clique em **Instalar no Quest**.
-- O sistema gerenciará a instalação do APK e dos arquivos OBB.
+### 3. Installation (Sideloading)
 
-## Stack Técnica
+- Once the download is complete on your PC, connect your VR headset via USB.
+- In the downloaded game's menu, click **Install on Quest**.
+- The system will manage the APK and OBB file installation.
 
-| Camada           | Tecnologia                                       |
-| :--------------- | :----------------------------------------------- |
-| **Frontend**     | Next.js 15 (App Router), Tailwind CSS, Shadcn UI |
-| **Backend**      | Node.js, Express, TypeScript                     |
-| **Persistência** | SQLite (Better-SQLite3)                          |
-| **Automação**    | Puppeteer Stealth, Cheerio, ADB Tools            |
-| **Comunicação**  | Socket.io, React Query, Zustand                  |
+## Technical Stack
+
+| Layer             | Technology                                       |
+| :---------------- | :----------------------------------------------- |
+| **Frontend**      | Next.js 15 (App Router), Tailwind CSS, Shadcn UI |
+| **Backend**       | Node.js, Express, TypeScript                     |
+| **Persistence**   | SQLite (Better-SQLite3)                          |
+| **Automation**    | Puppeteer Stealth, Cheerio, ADB Tools            |
+| **Communication** | Socket.io, React Query, Zustand                  |
 
 ---
 
-_Gerencie sua biblioteca VR local com eficiência e automação._
+_Manage your local VR library efficiently and automatically._
