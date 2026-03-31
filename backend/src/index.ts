@@ -82,12 +82,20 @@ app.use(cors());
 app.use(express.json());
 
 // --- Inventory & Global Config ---
-const CONFIG_FILE = path.join(process.cwd(), 'config.json');
+export const USER_DATA_DIR = path.join(os.homedir(), 'Documents', 'VRRookieDownloader');
+if (!fs.existsSync(USER_DATA_DIR)) {
+  fs.mkdirSync(USER_DATA_DIR, { recursive: true });
+}
+export const DEFAULT_GAMES_DIR = path.join(USER_DATA_DIR, 'games');
+if (!fs.existsSync(DEFAULT_GAMES_DIR)) {
+  fs.mkdirSync(DEFAULT_GAMES_DIR, { recursive: true });
+}
+const CONFIG_FILE = path.join(USER_DATA_DIR, 'config.json');
 
 function loadSettings() {
   const defaults = { 
-    downloadPath: 'E:\\\\VRGames', 
-    translationLanguage: 'pt',
+    downloadPath: DEFAULT_GAMES_DIR, 
+    translationLanguage: 'en',
     interfaceLanguage: 'en',
     offlineMode: false,
     start: true,
@@ -603,7 +611,7 @@ app.delete('/api/db/clear', async (req, res) => {
 });
 
 // --- Backup & Restore ---
-const tempDir = path.resolve(__dirname, '../data/temp');
+const tempDir = path.join(USER_DATA_DIR, 'temp');
 if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 const upload = multer({ dest: tempDir });
 
@@ -611,7 +619,7 @@ app.get('/api/db/export', async (req, res) => {
   stopScraper();
   
   const zip = new AdmZip();
-  const dbPath = path.resolve(__dirname, '../data/database.sqlite');
+  const dbPath = path.join(USER_DATA_DIR, 'database.sqlite');
   
   zip.addLocalFile(dbPath);
   
@@ -658,7 +666,7 @@ app.post('/api/db/import/apply', async (req, res) => {
     await closeDb();
     
     const zip = new AdmZip(tempPath);
-    const extractPath = path.resolve(__dirname, '../data');
+    const extractPath = USER_DATA_DIR;
     zip.extractEntryTo('database.sqlite', extractPath, false, true);
     
     await initDb();

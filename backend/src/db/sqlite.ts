@@ -1,13 +1,19 @@
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import path from 'path';
+import os from 'os';
+import fs from 'fs';
 
 let db: Database | undefined;
 
 export async function initDb(): Promise<Database> {
   if (db) return db;
 
-  const dbPath = path.resolve(__dirname, '../../data/database.sqlite');
+  const USER_DATA_DIR = path.join(os.homedir(), 'Documents', 'VRRookieDownloader');
+  if (!fs.existsSync(USER_DATA_DIR)) {
+    fs.mkdirSync(USER_DATA_DIR, { recursive: true });
+  }
+  const dbPath = path.join(USER_DATA_DIR, 'database.sqlite');
   
   db = await open({
     filename: dbPath,
