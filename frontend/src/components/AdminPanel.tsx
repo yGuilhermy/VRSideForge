@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Trash2, Edit, Database, AlertOctagon, RefreshCw, AlertTriangle, Download, UploadCloud } from 'lucide-react';
+import { Trash2, Edit, Database, AlertOctagon, RefreshCw, AlertTriangle, Download, UploadCloud, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Game {
@@ -32,6 +32,7 @@ export default function AdminPanel() {
   const queryClient = useQueryClient();
   const { interfaceLanguage, translationLanguage } = useStore();
   const [clearCount, setClearCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const [editGame, setEditGame] = useState<Game | null>(null);
   const [backupConfirm, setBackupConfirm] = useState<{ tempPath: string; metadata: any } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -162,6 +163,13 @@ export default function AdminPanel() {
 
   const failedItems = failedData?.items || [];
 
+  const cleanTitle = (title: string) => title.replace(/\[.*?\]\s*/g, '').trim();
+
+  const filteredGames = games.filter(g => 
+    g.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    cleanTitle(g.title).toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <Card className="border-border/50 bg-card/60 backdrop-blur w-full mt-6">
       <CardHeader>
@@ -171,6 +179,15 @@ export default function AdminPanel() {
         <CardDescription>
           {t('admin.description')}
         </CardDescription>
+        <div className="mt-4 relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder={t('admin.search')} 
+            className="pl-9 h-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -185,16 +202,16 @@ export default function AdminPanel() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {games.length === 0 && (
+              {filteredGames.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">{t('admin.table.noData')}</TableCell>
                 </TableRow>
               )}
-              {games.map(game => (
+              {filteredGames.map(game => (
                 <TableRow key={game.id}>
                   <TableCell className="font-mono text-xs">{game.id}</TableCell>
                   <TableCell className="font-medium whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]" title={game.title}>
-                    {game.title}
+                    {cleanTitle(game.title)}
                   </TableCell>
                    <TableCell>
                     <div className="flex flex-col gap-1">
@@ -220,7 +237,7 @@ export default function AdminPanel() {
       </CardContent>
 
       <CardFooter className="bg-muted/20 border-t border-border/50 pt-4 flex flex-row flex-wrap justify-between items-center gap-4">
-        <span className="text-sm text-muted-foreground mr-auto">{t('admin.table.total')}: {games.length}</span>
+        <span className="text-sm text-muted-foreground mr-auto">{t('admin.table.total')}: {filteredGames.length} {filteredGames.length !== games.length ? `(${games.length})` : ''}</span>
         
         <div className="flex flex-wrap items-center gap-2">
           {/* Rebuild All Button */}

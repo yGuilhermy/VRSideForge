@@ -6,14 +6,14 @@ echo    VR Rookie Downloader - Installer
 echo ==========================================
 echo.
 
-echo [0/4] Verificando Requisitos do Sistema...
+echo [0/4] Checking System Requirements...
 
 where node >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
-    echo [ERRO] Node.js nao encontrado!
-    echo Por favor, instale o Node.js v18 ou superior antes de continuar.
-    echo Baixe em: https://nodejs.org/
+    echo [ERROR] Node.js not found!
+    echo Please install Node.js v18 or newer before continuing.
+    echo Download at: https://nodejs.org/
     echo.
     pause
     exit /b 1
@@ -22,86 +22,87 @@ if %errorlevel% neq 0 (
 where adb >nul 2>nul
 if %errorlevel% neq 0 (
     echo.
-    echo [!] ADB (Android Debug Bridge) nao encontrado no PATH.
-    echo Iniciando download do ADB oficial (Platform Tools)...
+    echo [!] ADB (Android Debug Bridge) not found in PATH.
+    echo Downloading official ADB (Platform Tools)...
     
-    if not exist "bin" mkdir "bin"
+    set "ADB_DIR=%USERPROFILE%\Documents\VRRookieDownloader\adb"
+    if not exist "!ADB_DIR!" mkdir "!ADB_DIR!"
     
-    echo [1/3] Baixando...
-    curl -L "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -o "bin\platform-tools.zip"
+    echo [1/3] Downloading...
+    curl -L "https://dl.google.com/android/repository/platform-tools-latest-windows.zip" -o "!ADB_DIR!\platform-tools.zip"
     
     if %errorlevel% neq 0 (
-        echo [ERRO] Falha ao baixar o ADB. Verifique sua conexao com a internet.
+        echo [ERROR] Failed to download ADB. Check your internet connection.
     ) else (
-        echo [2/3] Extraindo arquivos...
-        powershell -Command "Expand-Archive -Path 'bin\platform-tools.zip' -DestinationPath 'bin' -Force"
+        echo [2/3] Extracting files...
+        powershell -Command "Expand-Archive -Path '!ADB_DIR!\platform-tools.zip' -DestinationPath '!ADB_DIR!' -Force"
         
-        echo [3/3] Organizando arquivos...
-        move /y "bin\platform-tools\*" "bin\" >nul
-        rmdir /s /q "bin\platform-tools"
-        del /f /q "bin\platform-tools.zip"
+        echo [3/3] Organizing files...
+        move /y "!ADB_DIR!\platform-tools\*" "!ADB_DIR!\" >nul
+        rmdir /s /q "!ADB_DIR!\platform-tools"
+        del /f /q "!ADB_DIR!\platform-tools.zip"
         
-        echo [INFO] Adicionando 'bin' ao PATH temporario da sessao...
-        set "PATH=%PATH%;%CD%\bin"
+        echo [INFO] Adding '!ADB_DIR!' to temporary session PATH...
+        set "PATH=%PATH%;!ADB_DIR!"
         
-        echo [INFO] Adicionando permanentemente ao PATH do usuario (via setx)...
-        setx PATH "%PATH%;%CD%\bin" >nul
+        echo [INFO] Adding permanently to user PATH (via setx)...
+        setx PATH "%PATH%;!ADB_DIR!" >nul
         
         echo.
-        echo [✓] ADB instalado e configurado com sucesso!
-        echo (IMPORTANTE: Se as funcionalidades de Sideload nao funcionarem imediatamente, reinicie o terminal.)
+        echo [OK] ADB installed and configured successfully!
+        echo (IMPORTANT: If Sideload features do not work immediately, the system will use the fallback path.)
     )
     echo.
 ) else (
-    echo OK! ADB detectado.
+    echo OK! ADB detected.
 )
 
 echo.
-echo [!] Verificando qBitTorrent...
+echo [!] Checking qBitTorrent...
 where qbittorrent >nul 2>nul
 if %errorlevel% neq 0 (
     if exist "C:\Program Files\qBittorrent\qbittorrent.exe" (
-        echo OK! qBitTorrent encontrado em C:\Program Files\qBittorrent.
+        echo OK! qBitTorrent found at C:\Program Files\qBittorrent.
     ) else (
-        echo [!] qBitTorrent nao detectado no sistema.
-        echo Tentando instalar via Winget (Windows Package Manager)...
+        echo [!] qBitTorrent not detected on the system.
+        echo Attempting to install via Winget (Windows Package Manager)...
         
         winget --version >nul 2>nul
         if %errorlevel% == 0 (
-            echo [1/2] Iniciando instalacao silenciosa via Winget...
+            echo [1/2] Starting silent installation via Winget...
             winget install --id qBittorrent.qBittorrent --silent --accept-package-agreements --accept-source-agreements
             if %errorlevel% == 0 (
-                echo [2/2] qBitTorrent instalado com sucesso!
+                echo [2/2] qBitTorrent installed successfully!
             ) else (
-                echo [!] Falha na instalacao via Winget. Tentando download direto...
+                echo [!] Winget installation failed. Attempting direct download...
                 goto :manual_qbit
             )
         ) else (
             :manual_qbit
-            echo [1/2] Baixando instalador do qBitTorrent...
+            echo [1/2] Downloading qBitTorrent installer...
             powershell -Command "Invoke-WebRequest -Uri 'https://managedway.dl.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-4.6.3/qbittorrent_4.6.3_x64_setup.exe' -OutFile 'qbit_setup.exe'"
-            echo [2/2] Executando instalador (isso pode levar alguns minutos)...
+            echo [2/2] Running installer (this may take a few minutes)...
             start /wait qbit_setup.exe /S
             del /f /q qbit_setup.exe
-            echo [✓] qBitTorrent instalado com sucesso!
+            echo [OK] qBitTorrent installed successfully!
         )
     )
 ) else (
-    echo OK! qBitTorrent detectado no PATH.
+    echo OK! qBitTorrent detected in PATH.
 )
 echo.
 
-echo [1/4] Verificando dependencias da Raiz...
+echo [1/4] Checking Root dependencies...
 if not exist node_modules (
-    echo Instalando...
+    echo Installing...
     call npm install
 ) else (
     echo OK!
 )
 
-echo [2/4] Verificando dependencias do Backend...
+echo [2/4] Checking Backend dependencies...
 if not exist backend\node_modules (
-    echo Instalando...
+    echo Installing...
     pushd backend
     call npm install
     popd
@@ -109,11 +110,11 @@ if not exist backend\node_modules (
     echo OK!
 )
 
-echo [3/4] Verificando dependencias do Frontend...
+echo [3/4] Checking Frontend dependencies...
 set "NEXT_BIN=frontend\node_modules\.bin\next"
 
 if not exist "!NEXT_BIN!" (
-    echo Binarios do Next.js nao encontrados ou corrompidos. Reinstalando...
+    echo Next.js binaries not found or corrupted. Reinstalling...
     pushd frontend
     if exist node_modules (
         rmdir /s /q node_modules
@@ -122,7 +123,7 @@ if not exist "!NEXT_BIN!" (
     popd
 ) else (
     if not exist frontend\node_modules (
-        echo Instalando...
+        echo Installing...
         pushd frontend
         call npm install
         popd
@@ -133,8 +134,8 @@ if not exist "!NEXT_BIN!" (
 
 echo.
 echo ==========================================
-echo    Instalacao Concluida com Sucesso!
-echo    Use o start.bat para rodar o projeto.
+echo    Installation Completed Successfully!
+echo    Use start.bat to run the project.
 echo ==========================================
 echo.
 pause

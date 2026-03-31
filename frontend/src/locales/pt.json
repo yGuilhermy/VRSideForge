@@ -229,6 +229,7 @@
   "admin": {
     "title": "Administração de Banco de Dados",
     "description": "Visualize e edite manualmente os jogos inseridos pelo Scraper.",
+    "search": "Pesquisar jogo...",
     "table": {
       "id": "ID",
       "title": "Título",

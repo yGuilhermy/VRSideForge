@@ -229,6 +229,7 @@
   "admin": {
     "title": "Database Administration",
     "description": "View and manually edit games inserted by the Scraper.",
+    "search": "Search by title...",
     "table": {
       "id": "ID",
       "title": "Title",
