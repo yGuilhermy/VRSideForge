@@ -86,7 +86,7 @@
 Clone the repository and run the automated installer:
 
 ```powershell
-git clone https://github.com/user/VRRookieDownloader.git
+git clone https://github.com/yGuilhermy/VRRookieDownloader.git
 cd VRRookieDownloader
 .\setup.bat
 ```

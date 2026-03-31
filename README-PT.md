@@ -86,7 +86,7 @@ O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperat
 Clone o repositório e execute o instalador automatizado:
 
 ```powershell
-git clone https://github.com/usuario/VRRookieDownloader.git
+git clone https://github.com/yGuilhermy/VRRookieDownloader.git
 cd VRRookieDownloader
 .\setup.bat
 ```
