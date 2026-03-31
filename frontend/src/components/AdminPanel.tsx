@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Trash2, Edit, Database, AlertOctagon, RefreshCw, AlertTriangle, Download, UploadCloud, Search } from 'lucide-react';
+import { Trash2, Edit, Database, AlertOctagon, RefreshCw, AlertTriangle, Download, UploadCloud, Search, ShieldBan, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Game {
@@ -33,6 +33,7 @@ export default function AdminPanel() {
   const { interfaceLanguage, translationLanguage } = useStore();
   const [clearCount, setClearCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [newBlacklistUrl, setNewBlacklistUrl] = useState('');
   const [editGame, setEditGame] = useState<Game | null>(null);
   const [backupConfirm, setBackupConfirm] = useState<{ tempPath: string; metadata: any } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,6 +131,23 @@ export default function AdminPanel() {
     queryFn: async () => (await api.get('/scraper/failed')).data,
   });
 
+  const { data: settingsData, refetch: refetchSettings } = useQuery<any>({
+    queryKey: ['settings'],
+    queryFn: async () => (await api.get('/settings')).data,
+  });
+
+  const updateBlacklistMutation = useMutation({
+    mutationFn: (newBlacklist: string[]) => api.post('/settings', { blacklist: newBlacklist }),
+    onSuccess: () => {
+      toast.success(t('common.save'));
+      refetchSettings();
+      setNewBlacklistUrl('');
+      queryClient.invalidateQueries({ queryKey: ['admin_games'] });
+      queryClient.invalidateQueries({ queryKey: ['games'] });
+    },
+    onError: () => toast.error(t('common.error')),
+  });
+
   const retryMutation = useMutation({
     mutationFn: (id: number) => api.post(`/scraper/failed/${id}/retry`),
     onSuccess: () => {
@@ -162,6 +180,17 @@ export default function AdminPanel() {
   });
 
   const failedItems = failedData?.items || [];
+  const blacklistItems = settingsData?.blacklist || [];
+
+  const handleAddBlacklist = () => {
+    if (!newBlacklistUrl.trim()) return;
+    if (blacklistItems.includes(newBlacklistUrl.trim())) return;
+    updateBlacklistMutation.mutate([...blacklistItems, newBlacklistUrl.trim()]);
+  };
+
+  const handleRemoveBlacklist = (urlToRemove: string) => {
+    updateBlacklistMutation.mutate(blacklistItems.filter((url: string) => url !== urlToRemove));
+  };
 
   const cleanTitle = (title: string) => title.replace(/\[.*?\]\s*/g, '').trim();
 
@@ -362,9 +391,74 @@ export default function AdminPanel() {
         </div>
       </CardContent>
 
-      <CardFooter className="bg-amber-500/5 text-amber-600/60 text-[10px] py-2 px-6 rounded-b-xl border-t border-amber-500/10">
+      <CardFooter className="bg-amber-500/5 text-amber-600/60 text-[10px] py-2 px-6 border-t border-amber-500/10">
         {t('admin.failed.status')}
       </CardFooter>
+
+      {/* Seção Blacklist */}
+      <CardHeader className="border-t border-border/50 bg-muted/5 mt-4">
+        <CardTitle className="flex items-center gap-2 text-rose-500">
+          <ShieldBan className="h-5 w-5" /> {t('admin.blacklist.title')}
+        </CardTitle>
+        <CardDescription>
+          {t('admin.blacklist.description')}
+        </CardDescription>
+        <div className="flex gap-2 mt-2">
+          <Input 
+            placeholder={t('admin.blacklist.placeholder')} 
+            value={newBlacklistUrl}
+            onChange={(e) => setNewBlacklistUrl(e.target.value)}
+            className="flex-1"
+            onKeyDown={(e) => e.key === 'Enter' && handleAddBlacklist()}
+          />
+          <Button 
+            variant="secondary" 
+            onClick={handleAddBlacklist}
+            disabled={!newBlacklistUrl.trim() || updateBlacklistMutation.isPending}
+          >
+            <Plus className="h-4 w-4 mr-2" /> {t('admin.blacklist.add')}
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent>
+        <div className="rounded-md border border-rose-500/20 overflow-auto max-h-[300px] custom-scrollbar">
+          <Table>
+            <TableBody>
+              {blacklistItems.length === 0 && (
+                <TableRow>
+                  <TableCell className="text-center h-20 text-muted-foreground italic">{t('admin.blacklist.noItems')}</TableCell>
+                </TableRow>
+              )}
+              {blacklistItems.map((url: string) => (
+                <TableRow key={url} className="group hover:bg-rose-500/5 transition-colors">
+                  <TableCell className="font-mono text-xs w-[80px] text-muted-foreground text-center">
+                    URL
+                  </TableCell>
+                  <TableCell>
+                    <a href={url} target="_blank" rel="noreferrer" className="text-sm font-medium hover:underline text-rose-500/80">
+                      {url}
+                    </a>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="text-muted-foreground hover:bg-rose-500/10 hover:text-rose-500"
+                      disabled={updateBlacklistMutation.isPending}
+                      onClick={() => handleRemoveBlacklist(url)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+
+      <CardFooter className="bg-rose-500/5 py-2 px-6 rounded-b-xl border-t border-rose-500/10" />
 
       <Dialog open={!!editGame} onOpenChange={(v) => !v && setEditGame(null)}>
         <DialogContent className="sm:max-w-[500px]">

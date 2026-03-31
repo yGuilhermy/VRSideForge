@@ -394,9 +394,14 @@ export default function GamePage() {
             </div>
 
             <div className="flex items-center justify-between gap-4 border-b border-border/30 pb-4 mb-2">
-              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-foreground to-foreground/70 flex-1">
-                {(showTranslated && game.translated_title ? game.translated_title : game.title).replace(/\[.*?\]/g, '').trim()}
-              </h1>
+              <div className="flex flex-col flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="outline" className="font-mono text-[10px] py-0 px-2 border-indigo-500/30 text-indigo-500/70 bg-indigo-500/5">Game ID: {game.id}</Badge>
+                </div>
+                <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-br from-foreground to-foreground/70">
+                  {(showTranslated && game.translated_title ? game.translated_title : game.title).replace(/\[.*?\]/g, '').trim()}
+                </h1>
+              </div>
               <Button 
                 variant="ghost" 
                 size="icon" 

@@ -258,6 +258,13 @@
       "status": "Itens salvos aqui não aparecerão no catálogo principal até serem processados.",
       "retryAllSuccess": "Tentativa em massa concluída! Sucessos: {{successes}}, Falhas: {{errors}}"
     },
+    "blacklist": {
+      "title": "Blacklist",
+      "description": "Tópicos listados aqui são ignorados e não aparecem no App.",
+      "noItems": "Nenhum link na blacklist.",
+      "add": "Adicionar",
+      "placeholder": "https://rutracker.me/forum/..."
+    },
     "edit": {
       "title": "Editar Jogo",
       "description": "Altere as informações (título original, etiquetas) armazenadas no banco.",

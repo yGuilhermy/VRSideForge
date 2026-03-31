@@ -258,6 +258,13 @@
       "status": "Items saved here will not appear in the main catalog until processed.",
       "retryAllSuccess": "Bulk retry completed! Success: {{successes}}, Errors: {{errors}}"
     },
+    "blacklist": {
+      "title": "Blacklist",
+      "description": "Topics listed here are ignored and will not show in the App.",
+      "noItems": "No links in the blacklist.",
+      "add": "Add",
+      "placeholder": "https://rutracker.me/forum/..."
+    },
     "edit": {
       "title": "Edit Game",
       "description": "Change stored information (original title, tags) in the database.",

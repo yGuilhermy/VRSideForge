@@ -90,7 +90,17 @@ function loadSettings() {
     translationLanguage: 'pt',
     interfaceLanguage: 'en',
     offlineMode: false,
-    start: true
+    start: true,
+    blacklist: [
+      "https://rutracker.me/forum/viewtopic.php?t=6620720",
+      "https://rutracker.me/forum/viewtopic.php?t=6449026",
+      "https://rutracker.me/forum/viewtopic.php?t=4718267",
+      "https://rutracker.me/forum/viewtopic.php?t=6676369",
+      "https://rutracker.me/forum/viewtopic.php?t=6287745",
+      "https://rutracker.me/forum/viewtopic.php?t=6422377",
+      "https://rutracker.me/forum/viewtopic.php?t=6422377",
+      "https://rutracker.me/forum/viewtopic.php?t=6683851"
+    ]
   };
 
   if (fs.existsSync(CONFIG_FILE)) {
@@ -116,6 +126,7 @@ let globalTranslationLanguage = settings.translationLanguage;
 let globalInterfaceLanguage = settings.interfaceLanguage;
 let globalOfflineMode = settings.offlineMode;
 let globalStart = settings.start;
+let globalBlacklist = settings.blacklist || [];
 
 export function getTranslationLanguage() {
   return globalTranslationLanguage;
@@ -365,6 +376,12 @@ app.get('/api/games', async (req, res) => {
   if (developer) {
     baseQuery += ' AND developer = ?';
     params.push(developer);
+  }
+
+  if (globalBlacklist && globalBlacklist.length > 0) {
+    const placeholders = globalBlacklist.map(() => '?').join(',');
+    baseQuery += ` AND post_url NOT IN (${placeholders})`;
+    params.push(...globalBlacklist);
   }
 
   let orderBy = 'created_at DESC';
@@ -865,12 +882,13 @@ app.get('/api/settings', (req, res) => {
     downloadPath: globalDownloadPath, 
     translationLanguage: globalTranslationLanguage,
     interfaceLanguage: globalInterfaceLanguage,
-    start: globalStart 
+    start: globalStart,
+    blacklist: globalBlacklist
   });
 });
 
 app.post('/api/settings', async (req, res) => {
-  const { downloadPath, translationLanguage, interfaceLanguage, start } = req.body;
+  const { downloadPath, translationLanguage, interfaceLanguage, start, blacklist } = req.body;
   
   try {
     if (downloadPath) {
@@ -887,24 +905,20 @@ app.post('/api/settings', async (req, res) => {
       }
     }
 
-    if (translationLanguage) {
-      globalTranslationLanguage = translationLanguage;
-    }
-    if (interfaceLanguage) {
-      globalInterfaceLanguage = interfaceLanguage;
-    }
-    if (typeof start === 'boolean') {
-      globalStart = start;
-    }
+    if (translationLanguage !== undefined) globalTranslationLanguage = translationLanguage;
+    if (interfaceLanguage !== undefined) globalInterfaceLanguage = interfaceLanguage;
+    if (start !== undefined) globalStart = start;
+    if (blacklist !== undefined) globalBlacklist = blacklist;
     
     saveSettings({ 
       downloadPath: globalDownloadPath, 
       translationLanguage: globalTranslationLanguage,
       interfaceLanguage: globalInterfaceLanguage,
-      start: globalStart
+      start: globalStart,
+      blacklist: globalBlacklist
     });
     
-    res.json({ success: true, downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage, interfaceLanguage: globalInterfaceLanguage, start: globalStart });
+    res.json({ success: true, downloadPath: globalDownloadPath, translationLanguage: globalTranslationLanguage, interfaceLanguage: globalInterfaceLanguage, start: globalStart, blacklist: globalBlacklist });
   } catch (err: any) {
     console.error(`[FS] Error saving settings: ${err.message}`);
     res.status(500).json({ error: 'Erro ao salvar configurações: ' + err.message });
@@ -1281,23 +1295,6 @@ app.post('/api/adb/install', async (req, res) => {
   }
 });
 
-app.get('/api/settings', (req, res) => {
-  res.json(loadSettings());
-});
-
-app.post('/api/settings', (req, res) => {
-  const newSettings = req.body;
-  saveSettings(newSettings);
-  
-  // Atualiza as variáveis globais em runtime
-  const updated = loadSettings();
-  if (updated.downloadPath) globalDownloadPath = updated.downloadPath;
-  if (updated.translationLanguage) globalTranslationLanguage = updated.translationLanguage;
-  if (updated.interfaceLanguage) globalInterfaceLanguage = updated.interfaceLanguage;
-  if (updated.offlineMode !== undefined) globalOfflineMode = updated.offlineMode;
-
-  res.json({ success: true, settings: updated });
-});
 
 const PORT = Number(process.env.PORT) || 4000;
 
