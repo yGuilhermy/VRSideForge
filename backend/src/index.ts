@@ -82,7 +82,13 @@ app.use(cors());
 app.use(express.json());
 
 // --- Inventory & Global Config ---
-export const USER_DATA_DIR = path.join(os.homedir(), 'Documents', 'VRRookieDownloader');
+const getUserDataDir = (): string => {
+  if (process.platform === 'win32') {
+    return path.join(os.homedir(), 'Documents', 'VRRookieDownloader');
+  }
+  return path.join(os.homedir(), '.local', 'share', 'VRRookieDownloader');
+};
+export const USER_DATA_DIR = getUserDataDir();
 if (!fs.existsSync(USER_DATA_DIR)) {
   fs.mkdirSync(USER_DATA_DIR, { recursive: true });
 }
@@ -940,8 +946,13 @@ app.get('/api/torrent/check', async (req, res) => {
     
     // Check Process
     try {
-      const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq qbittorrent.exe"');
-      isRunning = stdout.toLowerCase().includes('qbittorrent.exe');
+      if (process.platform === 'win32') {
+        const { stdout } = await execAsync('tasklist /FI "IMAGENAME eq qbittorrent.exe"');
+        isRunning = stdout.toLowerCase().includes('qbittorrent.exe');
+      } else {
+        const { stdout } = await execAsync('pgrep -x qbittorrent || pgrep -x qbittorrent-nox || true');
+        isRunning = stdout.trim().length > 0;
+      }
     } catch (e) { }
 
     // Check WebUI

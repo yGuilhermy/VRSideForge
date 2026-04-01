@@ -16,6 +16,7 @@
   <a href="https://nodejs.org/" target="_blank"><img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/></a>
   <a href="https://nextjs.org/" target="_blank"><img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js"/></a>
   <a href="https://www.typescriptlang.org/" target="_blank"><img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/></a>
+  <a href="https://www.electronjs.org/" target="_blank"><img src="https://img.shields.io/badge/Electron-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron"/></a>
 </p>
 
 ## Aviso Legal (Disclaimer)
@@ -30,9 +31,10 @@ O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperat
 
 ## TLDR; Jogos no seu VR em poucos passos
 
-1. Abra o aplicativo e siga o **Assistente de Configuração Inicial (Setup Wizard)** para validar sua sessão, dependências (ADB/qBittorrent) e idioma.
-2. Inicie o indexador para construir seu catálogo.
-3. Escolha um jogo, baixe via qBitTorrent e instale no Quest via USB.
+1. Faça a instalação do app: rode `setup.bat` no Windows ou `./setup.sh` no Linux.
+2. Abra o aplicativo usando `start.bat` (Windows) ou `./start.sh` (Linux) e siga o **Assistente de Configuração Inicial (Setup Wizard)** para validar sua sessão, dependências (ADB/qBittorrent) e idioma.
+3. Inicie o indexador para construir seu catálogo.
+4. Escolha um jogo, baixe via qBitTorrent (ou outro cliente torrent) e instale no Quest via USB.
 
 ## Funcionalidades Dinâmicas
 
@@ -41,6 +43,11 @@ O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperat
 **Captura automatizada de metadados diretamente do fórum original**
 
 - Extração de **Gênero**, **Versão**, **Desenvolvedor** e estatísticas de **Seeds/Leechers**.
+### Automação & Atualizações
+
+**Mantendo seu app atualizado e sincronizado**
+
+- **Sistema de Auto-Update:** O app verifica novas versões no GitHub ao iniciar e realiza um backup de segurança antes de atualizar.
 - **Sistema Multi-idioma:** Interface disponível em **Inglês (padrão)** e **Português**, com troca dinâmica nas configurações.
 - **Tradução Flexível:** Escolha o idioma de destino para as traduções dos jogos (Inglês ou Português).
 - **Interface Otimizada:** Botão para ocultar/mostrar a barra lateral de filtros para focar na visualização dos jogos.
@@ -60,82 +67,126 @@ O **VR Rookie Downloader** é uma ferramenta de indexação técnica. É imperat
 - Transferência automatizada de arquivos APK e pastas de dados (OBB).
 - Suporte para múltiplos dispositivos detectados via USB.
 
-## 🛠️ Instalação
+## 🛠️ Instalação & Primeiros Passos
 
-> **Nota:** O projeto atualmente funciona melhor no Windows. O suporte para MacOS é experimental (o sideloading requer configuração manual do ADB).
+### Rodando via Código-Fonte
 
-### 1. Pré-requisitos
+#### 1. Pré-requisitos
+
 - **[Node.js](https://nodejs.org/)** (v18.x ou superior)
 - **[Git](https://git-scm.com/)**
 
-### 2. Configuração Automática (Windows)
-Clone o repositório e execute o script de instalação. O script verificará automaticamente o Node.js, instalará as dependências do projeto e baixará/configurará opcionalmente o **ADB** e o **qBitTorrent** para você!
+#### 2. Setup
 
+Clone o repositório e execute o script de instalação para sua plataforma:
+
+**Windows:**
 ```powershell
 git clone https://github.com/yGuilhermy/VRRookieDownloader.git
 cd VRRookieDownloader
 .\setup.bat
 ```
-*(Durante a instalação, você será questionado se deseja instalar o qBitTorrent automaticamente caso ele não seja encontrado no seu sistema.)*
 
-### 3. Configuração do qBitTorrent
-Caso você tenha instalado o qBitTorrent manualmente ou queira verificar a instalação automática, você **DEVE** ativar a Web UI:
-1. Abra o qBitTorrent e vá em `Ferramentas` -> `Opções` -> `Web UI`.
-2. Marque a caixa **Interface de Usuário da Web (Controle Remoto)**.
-3. Endereço IP: `127.0.0.1` | Porta: `8080` (Padrão).
-4. Autenticação: Usuário `admin` | Senha `adminadmin`. *(Se você alterar a senha, deverá atualizar a função `loginQbit` no arquivo `backend/src/index.ts`)*.
-5. *(Opcional)* Marque **Ignorar autenticação para clientes no host local** para simplificar a conexão e melhorar a estabilidade.
+**Linux (Debian/Ubuntu):**
+```bash
+git clone https://github.com/yGuilhermy/VRRookieDownloader.git
+cd VRRookieDownloader
+chmod +x setup.sh start.sh
+./setup.sh
+```
 
-### 4. Executando o App
+#### 3. Executar
+
+**Windows:**
 ```powershell
 .\start.bat
 ```
-_Execute como Administrador se desejar utilizar o domínio local `http://vrrookie.local` para acessá-lo a partir de outros dispositivos na sua rede._
+
+**Linux:**
+```bash
+./start.sh
+```
+
+#### 4. Atualização
+
+Para verificar e instalar atualizações automaticamente:
+
+**Windows:**
+```powershell
+.\update.bat
+```
+
+**Linux:**
+```bash
+chmod +x update.sh
+./update.sh
+```
+
+Aguarde o carregamento e acesse http://localhost:3000 ou http://vrrookie.local para usar o app via navegador.
+
+### Configuração do qBitTorrent
+
+Caso queira que o app gerencie seus downloads, você **DEVE** ativar a Web UI no qBitTorrent:
+
+1. Abra o qBitTorrent -> `Ferramentas` -> `Opções` -> `Web UI`.
+2. Marque **Interface de Usuário da Web (Controle Remoto)**.
+3. Endereço IP: `127.0.0.1` | Porta: `8080`.
+4. Autenticação: Usuário `admin` | Senha `adminadmin`.
+5. _(Opcional)_ Marque **Ignorar autenticação para clientes no host local**.
+
+### Utilizando um Cliente Torrent Externo
+
+Se você optar por não utilizar o qBitTorrent integrado, é possível baixar os arquivos com qualquer outro cliente padrão:
+
+1. Na página do jogo, clique em **Baixar Magnet** (no texto abaixo do botão principal) para abrir o magnet link no seu aplicativo torrent padrão.
+2. Após o término e seed do download, **copie ou mova a pasta final do jogo** para a sua **Pasta Global de Jogos** (configurada no app).
+3. Vá até a aba de **Meus Jogos (Sideloading)** e ative o botão para **atualizar / mostrar pastas locais**.
+4. Encontre a pasta adicionada na lista de pastas não-indexadas, clique nela e mande **Indexar o Jogo** de forma manual. Pronto, a opção de instalar ficará habilitada!
 
 ## 🎮 Guia de Uso
 
 ### 1. Assistente de Configuração (Setup Wizard)
+
 Ao abrir pela primeira vez, o **Setup Wizard** receberá você. Ele valida automaticamente o ambiente:
+
 - Verifica se o **ADB** está disponível globalmente para o sideloading.
 - Testa a conexão com a **Web UI do qBitTorrent**.
 - Valida a sessão do **RuTracker** (resolvendo captchas e login em segundo plano).
 - Define e constrói a sua **Pasta Global de Jogos**.
 
 ### 2. Navegação e Downloads
+
 - Use a **Barra Lateral de Filtros** para pesquisar por gêneros, desenvolvedores ou texto. Você pode ocultar a barra para uma visão mais focada.
 - Clique no card de um jogo para ver os detalhes completos e informações traduzidas.
-- Clique em **Baixar no Servidor** para enviar o link magnético diretamente para o qBitTorrent. A interface mostrará o progresso em tempo real.
+- Clique em **Baixar no Servidor** para enviar o link magnético diretamente para o qBitTorrent ou clique em **Baixar Magnet** para abrir o magnet link no seu aplicativo torrent padrão. A interface mostrará o progresso em tempo real. (Apenas qbittorrent)
 
 ### 3. Sideloading para o Quest
+
 - Assim que o download atingir 100%, o botão do jogo mudará para **Instalar no Quest**.
 - Conecte o seu Meta Quest via cabo USB (certifique-se de que o Modo Desenvolvedor e a Depuração USB estejam ativos).
 - Clique no botão de instalar ou navegue até a guia **Sideloading** para gerenciar múltiplos APKs/OBBs locais de uma vez. O app transferirá e configurará os arquivos `.apk` e `.obb` no headset automaticamente.
 
-### 4. Utilizando um Cliente Torrent Externo (Opcional)
-Se você optar por não utilizar o qBitTorrent integrado, é possível baixar os arquivos com qualquer outro cliente padrão (ex: uTorrent, Vuze):
-1. Na página do jogo, clique em **Baixar** (no texto abaixo do botão principal) para abrir o magnet link no seu aplicativo torrent padrão.
-2. Após o término e seed do download, **copie ou mova a pasta final do jogo** para a sua **Pasta Global de Jogos** (configurada no app).
-3. Vá até a aba de **Meus Jogos (Sideloading)** e ative o botão para **atualizar / mostrar pastas locais**.
-4. Encontre a pasta adicionada na lista de pastas não-indexadas, clique nela e mande **Indexar o Jogo** de forma manual. Pronto, a opção de instalar ficará habilitada!
+Nota: Pode acontecer da instalação falhar por algum motivo, provavelmente o jogo baixado tem arquivos extras necessarios ou o apk está corrompido, nesse caso, você deve analisar e instalar manualmente. (Tente o SideQuest ou o RookieSideload)
 
-## ☑️ To-Do (Lista de Tarefas)
+## ☑️ To-Do (Lista de Tarefas) (Talvez)
 
-- [ ] Criar um `.exe` compilado para execução com apenas 1 clique (Release).
 - [ ] Adicionar suporte a múltiplas fontes de indexação além do RuTracker.
-- [ ] Implementar scripts de instalação nativos para MacOS/Linux (`setup.sh`).
-- [ ] Configurar a WebUI do qBitTorrent automaticamente via alteração nos arquivos de configuração do PC.
+- [x] Suporte nativo a Linux.
+- [ ] Talvez adicionar um downloader torrent nativo.
+- [x] Sistema de auto-update via GitHub.
 - [x] Quebra de captcha do RuTracker completamente em segundo plano.
 - [x] Suporte multi-idioma global (Inglês/Português).
 
 ## Stack Técnica
 
-| Camada           | Tecnologia                                       |
-| :--------------- | :----------------------------------------------- |
-| **Frontend**     | Next.js 15 (App Router), Tailwind CSS, Shadcn UI |
-| **Backend**      | Node.js, Express, TypeScript                     |
-| **Persistência** | SQLite (Better-SQLite3)                          |
-| **Automação**    | Puppeteer Stealth, Cheerio, ADB Tools            |
-| **Comunicação**  | Socket.io, React Query, Zustand                  |
+| Camada            | Tecnologia                                       |
+| :---------------- | :----------------------------------------------- |
+| **Shell Desktop** | Electron 33 (Portable / AppImage)                |
+| **Frontend**      | Next.js 16 (App Router), Tailwind CSS, Shadcn UI |
+| **Backend**       | Node.js, Express, TypeScript                     |
+| **Persistência**  | SQLite (Better-SQLite3)                          |
+| **Automação**     | Puppeteer Stealth, Cheerio, ADB Tools            |
+| **Comunicação**   | Socket.io, React Query, Zustand                  |
 
 ---
 

@@ -95,7 +95,7 @@ if %errorlevel% neq 0 (
             )
         ) else (
             echo [!] qBitTorrent installation skipped.
-            echo IMPORTANT: The application requires qBitTorrent to download games.
+            echo IMPORTANT: The application requires a torrent client to download games.
         )
     )
 ) else (

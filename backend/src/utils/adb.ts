@@ -9,6 +9,13 @@ const execAsync = util.promisify(exec);
 let adbCmd = 'adb';
 let isAdbResolved = false;
 
+const getAdbFallbackPath = (): string => {
+  if (process.platform === 'win32') {
+    return path.join(os.homedir(), 'Documents', 'VRRookieDownloader', 'adb', 'adb.exe');
+  }
+  return path.join(os.homedir(), '.local', 'share', 'VRRookieDownloader', 'adb', 'adb');
+};
+
 const getAdbCommand = async () => {
   if (isAdbResolved) return adbCmd;
   
@@ -16,7 +23,7 @@ const getAdbCommand = async () => {
     await execAsync('adb --version');
     adbCmd = 'adb';
   } catch (e) {
-    const fallbackPath = path.join(os.homedir(), 'Documents', 'VRRookieDownloader', 'adb', 'adb.exe');
+    const fallbackPath = getAdbFallbackPath();
     if (fs.existsSync(fallbackPath)) {
       adbCmd = `"${fallbackPath}"`;
     }
