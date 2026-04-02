@@ -1,8 +1,9 @@
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import util from 'util';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import { EtaEstimator } from './eta';
 
 const execAsync = util.promisify(exec);
 
@@ -94,32 +95,136 @@ export const getStorageInfo = async (deviceId?: string) => {
 };
 
 export const uninstallApp = async (pkg: string, deviceId?: string) => {
+  try {
+    const cmd = await getAdbCommand();
+    const deviceFlag = deviceId ? `-s ${deviceId}` : '';
+    const { stdout } = await execAsync(`${cmd} ${deviceFlag} uninstall ${pkg}`);
+    return stdout.includes('Success');
+  } catch (e) {
+    return false;
+  }
+};
+
+export const pullPath = async (remotePath: string, localPath: string, deviceId?: string) => {
   const cmd = await getAdbCommand();
   const deviceFlag = deviceId ? `-s ${deviceId}` : '';
-  const { stdout } = await execAsync(`${cmd} ${deviceFlag} uninstall ${pkg}`);
-  return stdout.includes('Success');
+  const { stdout, stderr } = await execAsync(`${cmd} ${deviceFlag} pull "${remotePath}" "${localPath}"`);
+  return { stdout, stderr };
+};
+
+export const pushPath = async (localPath: string, remotePath: string, deviceId?: string) => {
+  const cmd = await getAdbCommand();
+  const deviceFlag = deviceId ? `-s ${deviceId}` : '';
+  const { stdout, stderr } = await execAsync(`${cmd} ${deviceFlag} push "${localPath}" "${remotePath}"`);
+  return { stdout, stderr };
+};
+
+export const runAdbCommand = async (command: string, deviceId?: string) => {
+  const cmd = await getAdbCommand();
+  const deviceFlag = deviceId ? `-s ${deviceId}` : '';
+  // Remove 'adb ' prefix from command if present to avoid double adb
+  const cleanCommand = command.startsWith('adb ') ? command.substring(4) : command;
+  const { stdout, stderr } = await execAsync(`${cmd} ${deviceFlag} ${cleanCommand}`);
+  return { stdout, stderr };
 };
 
 export const installApp = async (apkPath: string, deviceId?: string) => {
   const cmd = await getAdbCommand();
   const deviceFlag = deviceId ? `-s ${deviceId}` : '';
-  // Resolve path to handle windows slashes and spaces correctly
   const absoluteApkPath = path.resolve(apkPath);
-  const { stdout } = await execAsync(`${cmd} ${deviceFlag} install -r -g "${absoluteApkPath}"`);
-  return stdout.includes('Success');
+  
+  try {
+    // We add -r (reinstall) and -g (grant permissions)
+    const { stdout, stderr } = await execAsync(`${cmd} ${deviceFlag} install -r -g "${absoluteApkPath}"`);
+    return { success: stdout.includes('Success'), stdout, stderr };
+  } catch (e: any) {
+    return { 
+      success: false, 
+      stdout: e.stdout || '', 
+      stderr: e.stderr || e.message 
+    };
+  }
 };
 
-export const pushObb = async (obbDir: string, pkg: string, deviceId?: string) => {
-  const cmd = await getAdbCommand();
-  const deviceFlag = deviceId ? `-s ${deviceId}` : '';
+export const pushObb = async (
+  obbDir: string, 
+  pkg: string, 
+  deviceId?: string, 
+  onProgress?: (percent: number, speed?: number, eta?: number) => void
+) => {
+  const cmdRaw = await getAdbCommand();
+  const cmd = cmdRaw.replace(/"/g, ''); // Remove quotes for spawn
+  const deviceFlag = deviceId ? ['-s', deviceId] : [];
   const targetParent = '/storage/emulated/0/Android/obb/';
   
-  // Resolve local path correctly
   const absoluteObbDir = path.resolve(obbDir);
+  const targetPath = (targetParent + pkg).replace(/\\/g, '/'); // Ensure forward slashes for Android
   
-  await execAsync(`${cmd} ${deviceFlag} shell mkdir -p ${targetParent}`);
-  const { stdout } = await execAsync(`${cmd} ${deviceFlag} push "${absoluteObbDir}" "${targetParent}"`);
-  return stdout;
+  // Get folder size for ETA calculation
+  let totalBytes = 100; // units are percentage by default
+  const getDirSize = (dir: string): number => {
+    let size = 0;
+    const items = fs.readdirSync(dir, { withFileTypes: true });
+    for (const item of items) {
+      const fullPath = path.join(dir, item.name);
+      if (item.isDirectory()) {
+        size += getDirSize(fullPath);
+      } else {
+        size += fs.statSync(fullPath).size;
+      }
+    }
+    return size;
+  };
+
+  try {
+    totalBytes = getDirSize(absoluteObbDir);
+  } catch (e: any) {
+    console.warn(`[ADB] Could not calculate OBB dir size: ${e.message}`);
+  }
+
+  const eta = new EtaEstimator(0.1, 0.2);
+
+  // Clean up existing OBB directory and recreate it (Rookie way)
+  try {
+    await execAsync(`${cmdRaw} ${deviceId ? `-s ${deviceId}` : ''} shell rm -rf "${targetPath}"`);
+    await execAsync(`${cmdRaw} ${deviceId ? `-s ${deviceId}` : ''} shell mkdir -p "${targetPath}"`);
+  } catch (e) {
+    // Ignore errors if directory cleanup fails
+  }
+
+  return new Promise((resolve, reject) => {
+    // Push the content of the local folder to the remote folder
+    const args = [...deviceFlag, 'push', absoluteObbDir, targetParent];
+    const child = spawn(cmd, args);
+
+    let output = '';
+
+    child.stdout.on('data', (data) => {
+      const chunk = data.toString();
+      output += chunk;
+      
+      const match = chunk.match(/(\d+)%/);
+      if (match && onProgress) {
+        const percent = parseInt(match[1]);
+        const doneUnits = (percent / 100) * totalBytes;
+        eta.update(totalBytes, doneUnits);
+        
+        onProgress(percent, eta.getSpeed(), eta.getDisplayEta() || 0);
+      }
+    });
+
+    child.stderr.on('data', (data) => {
+      console.error(`[ADB Push Error] ${data}`);
+    });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(output);
+      } else {
+        reject(new Error(`ADB push failed with code ${code}. Output: ${output}`));
+      }
+    });
+  });
 };
 
 /**

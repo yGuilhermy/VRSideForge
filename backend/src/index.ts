@@ -27,8 +27,10 @@ import {
   uninstallApp,
   pushObb,
   getApkPackageName,
-  checkAdbPath
+  checkAdbPath,
+  runAdbCommand
 } from './utils/adb';
+import { performRookieSideload } from './utils/sideload';
 import { Bonjour } from 'bonjour-service';
 import mdns from 'multicast-dns';
 import os from 'os';
@@ -1225,122 +1227,68 @@ app.post('/api/adb/install', async (req, res) => {
   const { folderPath, deviceId } = req.body;
   if (!folderPath) return res.status(400).json({ error: 'Caminho da pasta é obrigatório' });
 
-  try {
-    const targetDir = path.resolve(folderPath);
-    console.log(`[ADB] Install requested for: "${targetDir}"`);
-
-    if (!fs.existsSync(targetDir)) {
-      return res.status(404).json({ error: `Arquivo ou pasta não encontrada: ${targetDir}` });
-    }
-
-    const stat = fs.statSync(targetDir);
-    const isFile = stat.isFile();
-
-    if (isFile) {
-      if (!targetDir.endsWith('.apk')) {
-        return res.status(400).json({ error: 'O arquivo não é um APK válido.' });
-      }
-      const isSuccess = await installApp(targetDir, deviceId);
-      return res.json({ success: true, installLog: [{ apk: path.basename(targetDir), success: isSuccess }], obbLog: [] });
-    }
-
-    // Procura arquivos e pastas OBB de forma mais inteligente (Req 1)
-    const findFilesAndDirs = (dir: string): { apks: string[], obbFolders: string[] } => {
-      let apks: string[] = [];
-      let obbFolders: string[] = [];
-      const items = fs.readdirSync(dir, { withFileTypes: true });
-      
-      for (const item of items) {
-        const fullPath = path.join(dir, item.name);
-        if (item.isDirectory()) {
-          // Se o nome da pasta parece um package name e contem .obb, consideramos ela como root OBB
-          const subItems = fs.readdirSync(fullPath);
-          const hasObb = subItems.some(f => f.endsWith('.obb'));
-          const looksLikePkg = item.name.includes('.') && !item.name.includes(' ');
-          
-          if (hasObb && looksLikePkg) {
-            obbFolders.push(fullPath);
-          } else {
-            const sub = findFilesAndDirs(fullPath);
-            apks = apks.concat(sub.apks);
-            obbFolders = obbFolders.concat(sub.obbFolders);
-          }
-        } else if (item.name.endsWith('.apk')) {
-          apks.push(fullPath);
-        }
-      }
-      return { apks, obbFolders };
-    };
-
-    const { apks, obbFolders } = findFilesAndDirs(targetDir);
-    if (apks.length === 0 && obbFolders.length === 0) {
-      return res.status(400).json({ error: 'Nenhum APK ou Pasta OBB encontrada.' });
-    }
-
-    console.log(`[ADB] Instando em paralelo: ${apks.length} APKs e ${obbFolders.length} pastas OBB`);
-
-    // Executa instalações em paralelo
-    const installTasks = apks.map(async (apk) => {
-      const success = await installApp(apk, deviceId);
-      return { apk: path.basename(apk), success };
-    });
-
-    const obbTasks = obbFolders.map(async (obbDir) => {
-      const pkgName = path.basename(obbDir);
-      try {
-        await pushObb(obbDir, pkgName, deviceId);
-        return { pkg: pkgName, success: true };
-      } catch (err) {
-        return { pkg: pkgName, success: false };
-      }
-    });
-
-    const [installLog, obbLog] = await Promise.all([
-      Promise.all(installTasks),
-      Promise.all(obbTasks)
-    ]);
-
-    // Opcional: Indexa automaticamente após instalar se algum APK tiver sucesso (Req: salvar no index.json)
-    if (installLog.some(log => log.success)) {
-      try {
-        const folderName = path.basename(targetDir);
-        const inventory = getInventory(globalDownloadPath);
-        
-        // Verifica se já não está indexado
-        const alreadyIndexed = Object.values(inventory.downloads || {}).some((inv: any) => inv.folderName === folderName);
-        
-        if (!alreadyIndexed) {
-          const db = getDb();
-          const cleanItemName = folderName.replace(/\[.*?\]/g, '').trim();
-          const searchPrefix = cleanItemName.slice(0, 10);
-          const game = await db.get('SELECT * FROM games WHERE title LIKE ? OR title LIKE ? LIMIT 1', [`%${cleanItemName}%`, `%${searchPrefix}%`]);
-          
-          if (game) {
-            const virtualHash = `sideload_${game.id}_${Buffer.from(folderName).toString('hex').slice(0, 8)}`;
-            inventory.downloads[virtualHash] = {
-              gameId: game.id,
-              folderName: folderName,
-              hash: virtualHash,
-              status: 'concluido',
-              fileTree: [], // Não precisamos da árvore completa para marcar como instalado
-              progress: 100,
-              addedAt: new Date().toISOString()
-            };
-            updateInventory(globalDownloadPath, inventory);
-            console.log(`[ADB] Jogo indexado automaticamente após instalar: ${game.title}`);
-          }
-        }
-      } catch (err) {
-        console.error('[ADB] Erro ao indexar automaticamente:', err);
-      }
-    }
-
-    res.json({ success: true, installLog, obbLog });
-  } catch (err: any) {
-    console.error(`[ADB] Install error: ${err.message}`);
-    res.status(500).json({ error: err.message });
+  const targetDir = path.resolve(folderPath);
+  if (!fs.existsSync(targetDir)) {
+    return res.status(404).json({ error: `Arquivo ou pasta não encontrada: ${targetDir}` });
   }
+
+  // Responde imediatamente para evitar timeout
+  res.json({ success: true, message: 'Processo de instalação Rookie iniciado em segundo plano.' });
+
+  // Inicia o processo em segundo plano usando a nova lógica Rookie
+  (async () => {
+    try {
+      console.log(`[ROOKIE-SIDELOAD] Background install started for: "${targetDir}"`);
+      
+      const result = await performRookieSideload(targetDir, deviceId, globalInterfaceLanguage);
+      
+      // Indexação automática após sucesso (lógica já existente)
+      if (result.installLog.some(log => log.success)) {
+        try {
+          const folderName = path.basename(targetDir);
+          const inventory = getInventory(globalDownloadPath);
+          const alreadyIndexed = Object.values(inventory.downloads || {}).some((inv: any) => inv.folderName === folderName);
+          
+          if (!alreadyIndexed) {
+            const db = getDb();
+            const cleanItemName = folderName.replace(/\[.*?\]/g, '').trim();
+            const searchPrefix = cleanItemName.slice(0, 10);
+            const game = await db.get('SELECT * FROM games WHERE title LIKE ? OR title LIKE ? LIMIT 1', [`%${cleanItemName}%`, `%${searchPrefix}%`]);
+            
+            if (game) {
+              const virtualHash = `sideload_${game.id}_${Buffer.from(folderName).toString('hex').slice(0, 8)}`;
+              inventory.downloads[virtualHash] = {
+                gameId: game.id,
+                folderName: folderName,
+                hash: virtualHash,
+                status: 'concluido',
+                fileTree: [],
+                progress: 100,
+                addedAt: new Date().toISOString()
+              };
+              updateInventory(globalDownloadPath, inventory);
+            }
+          }
+        } catch (err) {
+          console.error('[ADB] Erro ao indexar automaticamente:', err);
+        }
+      }
+
+      io.emit('adb_event', { 
+        type: 'finished', 
+        success: result.success, 
+        folderPath: targetDir, 
+        installLog: result.installLog, 
+        obbLog: result.obbLog 
+      });
+
+    } catch (err: any) {
+      console.error(`[ROOKIE-SIDELOAD] Error: ${err.message}`);
+      io.emit('adb_event', { type: 'error', message: err.message, folderPath: targetDir });
+    }
+  })();
 });
+
 
 
 const PORT = Number(process.env.PORT) || 4000;

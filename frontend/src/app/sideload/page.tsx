@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { io } from 'socket.io-client';
 import api from '@/lib/api';
 import { useStore } from '@/store/useStore';
 import { useTranslation } from '@/lib/i18n';
@@ -9,8 +10,18 @@ import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Smartphone, HardDrive, Trash2, DownloadCloud, RefreshCw, FolderDown, AlertCircle, Layers, CheckCircle2 } from 'lucide-react';
+import { Smartphone, HardDrive, Trash2, DownloadCloud, RefreshCw, FolderDown, AlertCircle, Layers, CheckCircle2, PackageSearch, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { Progress } from '@/components/ui/progress';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface LocalItem {
   name: string;
@@ -23,8 +34,69 @@ export default function SideloadPage() {
   const { t } = useTranslation();
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
   const [installingFolder, setInstallingFolder] = useState<string | null>(null);
+  const [installProgress, setInstallProgress] = useState<{ 
+    current: number, 
+    total: number, 
+    percent: number, 
+    name?: string, 
+    message?: string,
+    speed?: number,
+    eta?: number 
+  } | null>(null);
+  const [finishedItem, setFinishedItem] = useState<{ name: string, success: boolean } | null>(null);
   const { downloadPath } = useStore();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const socket = io({
+      transports: ['websocket', 'polling'],
+      reconnectionAttempts: 5,
+    });
+
+    socket.on('connect', () => {
+      console.log('[Socket] Connected to backend');
+    });
+
+    socket.on('adb_event', (data: any) => {
+      console.log('[ADB Socket Event Received]', data);
+      
+      if (data.type === 'progress') {
+        if (data.total !== undefined && data.current !== undefined) {
+           setInstallProgress({ 
+             total: data.total, 
+             current: data.current, 
+             percent: data.percent ?? 0,
+             name: data.currentName,
+             message: data.message,
+             speed: data.speed,
+             eta: data.eta
+           });
+        } else {
+           toast.info(data.message);
+        }
+      } else if (data.type === 'finished') {
+        const itemName = data.folderPath ? data.folderPath.split(/[\\/]/).pop() : 'Jogo';
+        setInstallingFolder(null);
+        setInstallProgress(null);
+        setFinishedItem({ name: itemName, success: data.success });
+        
+        if (data.success) {
+          toast.success(t('sideload.install.installed'));
+        } else {
+          toast.error(t('common.error') + ': ' + (t('sideload.install.fail') || 'Falha na instalação.'));
+        }
+        queryClient.invalidateQueries({ queryKey: ['adb-apps', selectedDevice] });
+      } else if (data.type === 'error') {
+        setInstallingFolder(null);
+        setInstallProgress(null);
+        toast.error(t('common.error') + ': ' + data.message);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [selectedDevice, queryClient, t]);
 
   const { data: devices = [], isLoading: loadingDevices, refetch: refetchDevices } = useQuery<string[]>({
     queryKey: ['adb-devices'],
@@ -68,6 +140,22 @@ export default function SideloadPage() {
     return false;
   };
 
+  const formatSpeed = (speedBytes?: number) => {
+    if (!speedBytes || speedBytes <= 0) return '';
+    const mb = speedBytes / (1024 * 1024);
+    return `${mb.toFixed(2)} MB/s`;
+  };
+
+  const formatEta = (seconds?: number) => {
+    if (seconds === undefined || seconds <= 0) return '';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    
+    if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   const uninstallMutation = useMutation({
     mutationFn: async (pkg: string) => {
       const res = await api.post('/adb/uninstall', { pkg, deviceId: selectedDevice });
@@ -85,6 +173,14 @@ export default function SideloadPage() {
   const installMutation = useMutation({
     mutationFn: async (folderName: string) => {
       setInstallingFolder(folderName);
+      setInstallProgress({ 
+        total: 1, 
+        current: 0, 
+        percent: 0, 
+        name: folderName, 
+        message: t('sideload.install.waiting') 
+      });
+
       if (!downloadPath) throw new Error(t('sideload.install.noPath'));
       const fullPath = `${downloadPath}/${folderName}`;
       const res = await api.post('/adb/install', { folderPath: fullPath, deviceId: selectedDevice });
@@ -98,7 +194,7 @@ export default function SideloadPage() {
       toast.error(t('common.error') + ': ' + (error.response?.data?.error || error.message));
     },
     onSettled: () => {
-      setInstallingFolder(null);
+      // setInstallingFolder(null); // Agora controlado pelo socket
     }
   });
 
@@ -138,6 +234,80 @@ const scanMutation = useMutation({
           </Button>
         </div>
       </div>
+      
+      {/* Barra de Progresso Global Flutuante */}
+      {installProgress && (
+        <div className="fixed bottom-6 right-6 z-50 w-[350px] animate-in slide-in-from-right-8 duration-500">
+          <Card className="border-primary/50 bg-card/95 backdrop-blur-md shadow-2xl shadow-primary/20 border-2">
+            <CardContent className="pt-5 pb-5 space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1 overflow-hidden">
+                  <span className="text-xs font-bold text-indigo-400 flex items-center gap-2 uppercase tracking-wider">
+                     <PackageSearch className="h-3.5 w-3.5" />
+                     {installProgress.message || 'Instalando...'}
+                  </span>
+                  <p className="text-[11px] text-muted-foreground font-mono truncate" title={installProgress.name || installingFolder || ''}>
+                    {installProgress.name || installingFolder}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6 -mr-2 -mt-2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setInstallProgress(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-bold">
+                   <span className="text-indigo-400/80">{Math.round(((installProgress.current + (installProgress.percent / 100)) / installProgress.total) * 100)}%</span>
+                   <span className="text-muted-foreground">{installProgress.current + 1} / {installProgress.total}</span>
+                </div>
+                <Progress value={((installProgress.current + (installProgress.percent / 100)) / installProgress.total) * 100} className="h-2.5" />
+                <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono px-0.5">
+                  <span className="text-emerald-400 font-bold">{formatSpeed(installProgress.speed)}</span>
+                  <span>{installProgress.eta ? t('sideload.install.remainingCounter').replace('{{time}}', formatEta(installProgress.eta)) : ''}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Aviso Extra de Conclusão */}
+      <AlertDialog open={!!finishedItem} onOpenChange={(open) => !open && setFinishedItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {finishedItem?.success ? (
+                <>
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                  Instalação Concluída!
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-6 w-6 text-rose-500" />
+                  Falha na Instalação
+                </>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {finishedItem ? (
+                finishedItem.success 
+                  ? `O jogo "${finishedItem.name}" foi instalado com sucesso no seu dispositivo VR. Você já pode desconectar o cabo se desejar.`
+                  : `Ocorreu um erro ao tentar instalar "${finishedItem.name}". Verifique a conexão USB e o espaço disponível no dispositivo.`
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setFinishedItem(null)} className={finishedItem?.success ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}>
+              Entendido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Dispositivos Conectados */}

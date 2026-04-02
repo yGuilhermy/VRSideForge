@@ -164,7 +164,20 @@
       "installOnQuest": "Instalar no Quest",
       "onHold": "Em espera",
       "indexToEnable": "Indexe para habilitar",
-      "waitForCompletion": "Aguarde a conclusão"
+      "waitForCompletion": "Aguarde a conclusão",
+      "backgroundStarted": "Processo de instalação iniciado em segundo plano.",
+      "installingProgress": "Instalando {{apks}} APK(s) e {{obbs}} pasta(s) OBB...",
+      "installingOnQuest": "Iniciando instalação no Quest...",
+      "reinstalling": "Reinstalação (Backup -> Desinstalar -> Instalar -> Restaurar)...",
+      "backingUp": "Fazendo backup dos dados salvos...",
+      "uninstalling": "Desinstalando versão antiga...",
+      "restoring": "Restaurando dados salvos...",
+      "pushingObb": "Enviando OBB...",
+      "runningCustom": "Executando comandos customizados de install.txt...",
+      "customCommand": "Executando comando {{current}}/{{total}}: {{cmd}}",
+      "pushingCompanion": "Enviando OBB companheira: {{pkg}}",
+      "pushingLoneObb": "Enviando OBB avulso: {{pkg}}",
+      "remainingCounter": "restam {{time}}"
     },
     "apps": {
       "title": "Apps no Dispositivo",
