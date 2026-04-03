@@ -66,6 +66,23 @@
         "description": "Choose the language for game descriptions and titles (scraped from the forum).",
         "warning": "Warning: Changing the translation language with an existing database will require rebuilding the database to translate everything. Rebuilding individual game databases will also use this language."
       }
+    },
+    "inventory": {
+      "title": "Inventory Manager (.index.json)",
+      "description": "Edit or remove index file entries manually to resolve bugs or freezes.",
+      "hash": "Hash / Identifier",
+      "folder": "Folder on Disk",
+      "gameId": "Game ID",
+      "status": "State",
+      "progress": "Progress (%)",
+      "edit": "Edit Entry",
+      "remove": "Remove",
+      "save": "Save",
+      "close": "Close",
+      "confirmDelete": "Are you sure you want to remove this entry? The physical file will remain on disk.",
+      "noItems": "No indexed items found.",
+      "updateSuccess": "Index updated successfully!",
+      "removeSuccess": "Removed from index."
     }
   },
   "home": {
@@ -340,7 +357,7 @@
     "info": "Information",
     "legal": "Legal Disclaimer",
     "poweredBy": "Powered by ADB",
-    "beta": "Beta 0.1.3",
+    "beta": "Beta 0.1.4",
     "copyright": "All rights reserved",
     "madeWith": "Made with",
     "forEnthusiasts": "for Virtual Reality enthusiasts"

@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 
 import AdminPanel from '@/components/AdminPanel';
 import AuthModal from '@/components/AuthModal';
+import InventoryManager from '@/components/InventoryManager';
 
 export default function Settings() {
   const { t } = useTranslation();
@@ -340,6 +341,7 @@ export default function Settings() {
         </CardFooter>
       </Card>
       
+      <InventoryManager />
       <AdminPanel />
       <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>

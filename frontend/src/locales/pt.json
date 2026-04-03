@@ -66,6 +66,23 @@
         "description": "Escolha o idioma para as descrições e títulos dos jogos (scraped do fórum).",
         "warning": "Aviso: Ao mudar a língua de tradução com um banco de dados já existente, você terá que reconstruir o banco para traduzir tudo. Reconstruir o banco de dados individual de um jogo já utilizará esta nova língua."
       }
+    },
+    "inventory": {
+      "title": "Gerenciador do Índice (.index.json)",
+      "description": "Edite ou remova entradas do arquivo de índice para resolver bugs ou travamentos.",
+      "hash": "Hash / Identificador",
+      "folder": "Pasta no Disco",
+      "gameId": "ID do Jogo",
+      "status": "Estado",
+      "progress": "Progresso (%)",
+      "edit": "Editar Entrada",
+      "remove": "Remover",
+      "save": "Salvar",
+      "close": "Fechar",
+      "confirmDelete": "Tem certeza que deseja remover esta entrada? O arquivo físico continuará no disco.",
+      "noItems": "Nenhum item indexado.",
+      "updateSuccess": "Índice atualizado com sucesso!",
+      "removeSuccess": "Removido do índice."
     }
   },
   "home": {
@@ -340,7 +357,7 @@
     "info": "Informações",
     "legal": "Aviso Legal",
     "poweredBy": "Powered by ADB",
-    "beta": "Beta 0.1.3!",
+    "beta": "Beta 0.1.4!",
     "copyright": "Todos os direitos reservados",
     "madeWith": "Feito com",
     "forEnthusiasts": "para entusiastas de Realidade Virtual"
