@@ -1,6 +1,6 @@
 {
   "name": "vrsideforge-backend",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",

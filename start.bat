@@ -16,7 +16,7 @@ if not exist "!NEXT_BIN!" (
 )
 
 echo.
-echo [1/1] Iniciando Backend e Frontend...
+echo [1/1] Starting VRSideForge...
 echo.
 
 :: Try to run dev
@@ -24,8 +24,8 @@ call npm run dev
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [ERRO] O processo fechou com erro de codigo !ERRORLEVEL!. 
-    echo Talvez seja necessario rodar o 'setup.bat' manualmente.
+    echo [ERROR] The process closed with error code !ERRORLEVEL!. 
+    echo Maybe you need to run 'setup.bat' manually.
 )
 
 pause

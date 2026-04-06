@@ -106,39 +106,44 @@ if (!fs.existsSync(USER_DATA_DIR)) {
 }
 export const DEFAULT_GAMES_DIR = path.join(USER_DATA_DIR, 'games');
 if (!fs.existsSync(DEFAULT_GAMES_DIR)) {
-  fs.mkdirSync(DEFAULT_GAMES_DIR, { recursive: true });
+    fs.mkdirSync(DEFAULT_GAMES_DIR, { recursive: true });
 }
 const CONFIG_FILE = path.join(USER_DATA_DIR, 'config.json');
+const BLACKLIST_FILE = path.join(__dirname, 'blacklist.json');
 
 function loadSettings() {
+  let globalBlacklist: string[] = [];
+  try {
+    if (fs.existsSync(BLACKLIST_FILE)) {
+      globalBlacklist = JSON.parse(fs.readFileSync(BLACKLIST_FILE, 'utf8'));
+    }
+  } catch (err) {
+    console.error('[Settings] Error loading global blacklist:', err);
+  }
+
   const defaults = { 
     downloadPath: DEFAULT_GAMES_DIR, 
     translationLanguage: 'en',
     interfaceLanguage: 'en',
     offlineMode: false,
     start: true,
-    blacklist: [
-      "https://rutracker.me/forum/viewtopic.php?t=6620720",
-      "https://rutracker.me/forum/viewtopic.php?t=6449026",
-      "https://rutracker.me/forum/viewtopic.php?t=4718267",
-      "https://rutracker.me/forum/viewtopic.php?t=6676369",
-      "https://rutracker.me/forum/viewtopic.php?t=6287745",
-      "https://rutracker.me/forum/viewtopic.php?t=6422377",
-      "https://rutracker.me/forum/viewtopic.php?t=6683851",
-      "https://rutracker.org/forum/viewtopic.php?t=6167995",
-      "https://rutracker.org/forum/viewtopic.php?t=5898319",
-      "https://rutracker.org/forum/viewtopic.php?t=6245250",
-      "https://rutracker.org/forum/viewtopic.php?t=6245254",
-      "https://rutracker.org/forum/viewtopic.php?t=6247834",
-      "https://rutracker.org/forum/viewtopic.php?t=5851345",
-      "https://rutracker.org/forum/viewtopic.php?t=5860681"
-    ]
+    blacklist: globalBlacklist
   };
 
   if (fs.existsSync(CONFIG_FILE)) {
     try {
       const saved = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-      return { ...defaults, ...saved };
+      const combinedBlacklist = [...new Set([...(saved.blacklist || []), ...globalBlacklist])].sort();
+      
+      const settings = { ...defaults, ...saved, blacklist: combinedBlacklist };
+
+      // Se houver novas entradas na blacklist global que não estavam no config.json do usuário, salva atualizado
+      if (JSON.stringify(combinedBlacklist) !== JSON.stringify(saved.blacklist || [])) {
+        console.log('[Settings] New blacklist entries found, updating config.json...');
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(settings, null, 2));
+      }
+
+      return settings;
     } catch { 
       return defaults; 
     }
@@ -146,10 +151,19 @@ function loadSettings() {
   return defaults;
 }
 
-function saveSettings(settings: any) {
+function saveSettings(newSettings: any) {
   const current = loadSettings();
-  const updated = { ...current, ...settings };
+  const updated = { ...current, ...newSettings };
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(updated, null, 2));
+  
+  // Update global variables
+  settings = updated;
+  globalDownloadPath = settings.downloadPath;
+  globalTranslationLanguage = settings.translationLanguage;
+  globalInterfaceLanguage = settings.interfaceLanguage;
+  globalOfflineMode = settings.offlineMode;
+  globalStart = settings.start;
+  globalBlacklist = settings.blacklist || [];
 }
 
 let settings = loadSettings();
@@ -405,7 +419,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 // --- Games ---
 function buildGamesQuery(req: any) {
-  const { type, q, page = '1', limit = '20', sort = 'time', genre, developer, path: pathQuery } = req.query;
+  const { type, q, page = '1', limit = '20', sort = 'time', genre, developer, path: pathQuery, status } = req.query;
   const p = parseInt(page as string);
   const l = parseInt(limit as string);
   const offset = (p - 1) * l;
@@ -430,6 +444,32 @@ function buildGamesQuery(req: any) {
   } else if (type) {
     baseQuery += ' AND tags LIKE ?';
     params.push(`%${type}%`);
+  }
+
+  if (status === 'available') {
+    if (indexedIds.length > 0) {
+      const placeholders = indexedIds.map(() => '?').join(',');
+      baseQuery += ` AND id NOT IN (${placeholders})`;
+      params.push(...indexedIds);
+    }
+  } else if (status === 'downloading') {
+    const downloadingIds = Array.from(new Set(invEntries.filter(e => (e.status === 'download' || e.status === 'predownload') && e.gameId > 0).map(e => e.gameId)));
+    if (downloadingIds.length > 0) {
+      const placeholders = downloadingIds.map(() => '?').join(',');
+      baseQuery += ` AND id IN (${placeholders})`;
+      params.push(...downloadingIds);
+    } else {
+      baseQuery += ' AND 1 = 0';
+    }
+  } else if (status === 'installed') {
+    const installedIds = Array.from(new Set(invEntries.filter(e => e.status === 'concluido' && e.gameId > 0).map(e => e.gameId)));
+    if (installedIds.length > 0) {
+      const placeholders = installedIds.map(() => '?').join(',');
+      baseQuery += ` AND id IN (${placeholders})`;
+      params.push(...installedIds);
+    } else {
+      baseQuery += ' AND 1 = 0';
+    }
   }
 
   if (q) {

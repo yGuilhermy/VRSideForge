@@ -174,17 +174,29 @@ async function translateGame(title: string, description: string) {
     console.log(`[!] Translation failed for ${title}.`);
   }
 
-  // Extract meta-info
-  let genre = description.match(/Жанр:\s*([^\n]+)/i)?.[1].trim();
-  let developer = description.match(/Разработчик:\s*([^\n]+)/i)?.[1].trim();
-  let publisher = description.match(/Издатель:\s*([^\n]+)/i)?.[1].trim();
-  const version = description.match(/Версия:\s*([^\n]+)/i)?.[1].trim();
-  let languages = description.match(/Языки:\s*([^\n]+)/i)?.[1].trim();
-  let play_modes = description.match(/Поддерживаемые игровые режимы:\s*([^\n]+)/i)?.[1].trim();
+  // Extract meta-info (using various common labels)
+  let genreMatch = description.match(/(?:Жанр|Genre):\s*([^\n]+)/i);
+  let devMatch = description.match(/(?:Разработчик|Developer):\s*([^\n]+)/i);
+  let pubMatch = description.match(/(?:Издатель|Publisher):\s*([^\n]+)/i);
+  let langMatch = description.match(/(?:Языки|Languages):\s*([^\n]+)/i);
+  let modeMatch = description.match(/(?:Поддерживаемые игровые режимы|Play Modes):\s*([^\n]+)/i);
+  
+  let genre = genreMatch?.[1].trim();
+  let developer = devMatch?.[1].trim();
+  let publisher = pubMatch?.[1].trim();
+  const version = description.match(/(?:Версия|Version):\s*([^\n]+)/i)?.[1].trim();
+  let languages = langMatch?.[1].trim();
+  let play_modes = modeMatch?.[1].trim();
 
   // 3. Translate metadata fields (they are short, so this is fast)
   try {
-    if (genre) genre = await translateText(genre, lang);
+    // Better translation for list of genres
+    if (genre) {
+       const genresRaw = genre.split(/[,|/]+/).map(g => g.trim()).filter(g => g);
+       const translatedGenres = await Promise.all(genresRaw.map(g => translateText(g, lang)));
+       genre = translatedGenres.join(', ');
+    }
+    
     if (developer && developer !== 'Mikalai Kazei' && developer !== 'Unknown') developer = await translateText(developer, lang);
     if (publisher && publisher !== 'Mikalai Kazei' && publisher !== 'Unknown') publisher = await translateText(publisher, lang);
     if (languages) languages = await translateText(languages, lang);

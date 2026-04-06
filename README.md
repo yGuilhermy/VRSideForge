@@ -60,6 +60,7 @@
 - Real-time progress monitoring directly in the library.
 - **Bulk Download System:** Select multiple games in the catalog and start all downloads simultaneously to qBitTorrent with a single click.
 - **Inventory Manager:** Advanced management of `.index.json` files, allowing manual editing or removal of entries to resolve database inconsistencies.
+- **Advanced Filtering:** Filter your library or the global catalog by download status (Available, Downloading, Installed) to easily track your content.
 - Automatic synchronization between physical files on the HDD and the database.
 
 ### Sideloading

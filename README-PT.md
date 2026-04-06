@@ -1,4 +1,4 @@
-<p align="center">
+  <p align="center">
   <img src="frontend/src/app/icon.png" width="128" height="128">
 </p>
 

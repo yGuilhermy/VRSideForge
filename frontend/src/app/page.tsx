@@ -30,6 +30,7 @@ interface Game {
   translated_title?: string;
   isDownloading?: boolean;
   torrentProgress?: number;
+  genre?: string;
 }
 
 export default function Home() {
@@ -40,7 +41,8 @@ export default function Home() {
   const [sort, setSort] = useState('time');
   const [genreFilter, setGenreFilter] = useState('');
   const [devFilter, setDevFilter] = useState('');
-  const [translateMode, setTranslateMode] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [translateMode, setTranslateMode] = useState(true);
   const [showFolders, setShowFolders] = useState(false);
   const [manualIndexFolder, setManualIndexFolder] = useState<string | null>(null);
   const [manualGameId, setManualGameId] = useState('');
@@ -86,7 +88,7 @@ export default function Home() {
   }, [queryClient]);
 
   const { data, isLoading, isError } = useQuery<{ games: Game[], pages: number, total: number }>({
-    queryKey: ['games', page, search, typeFilter, sort, genreFilter, devFilter, limit],
+    queryKey: ['games', page, search, typeFilter, sort, genreFilter, devFilter, limit, statusFilter],
     queryFn: async () => {
       const res = await api.get('/games', {
         params: { 
@@ -97,7 +99,8 @@ export default function Home() {
           path: downloadPath,
           sort,
           genre: genreFilter,
-          developer: devFilter
+          developer: devFilter,
+          status: statusFilter
         }
       });
       return res.data;
@@ -252,75 +255,22 @@ export default function Home() {
       toast.success(t('home.bulk.selected', { count: nextSelection.length }));
     }
   };
-
   const cleanTitle = (game: Game) => {
     const targetTitle = (translateMode && game.translated_title) ? game.translated_title : game.title;
     return targetTitle.replace(/\[.*?\]/g, '').trim();
   };
 
-  const translateTag = (tag: string) => {
-    const tagMap: Record<string, string> = {
-      'Головоломки': 'Puzzle',
-      'Ритм': 'Ritmo',
-      'Экшен': 'Ação',
-      'Аркады': 'Arcade',
-      'Спорт': 'Esporte',
-      'Настольные': 'Tabuleiro',
-      'Стратегии': 'Estratégia',
-      'Гонки': 'Corrida',
-      'Симуляторы': 'Simulação',
-      'Шутеры': 'Tiro',
-      'Файтинги': 'Luta',
-      'Ролевые игры': 'RPG',
-      'Приключенческие': 'Aventura',
-      'Платформеры': 'Plataforma',
-      'Песочница': 'Sandbox',
-      'Медициna': 'Medicina',
-      'Обучение': 'Educação',
-      'Смешанная реальность': 'Realidade Mista',
-      'Мультиплеер': 'Multijogador',
-      'Казуальные': 'Casual',
-      'Ужасы': 'Horror',
-      'Музыка и ритм': 'Música e Ritmo',
-      'Путешествия и исследования': 'Exploração',
-      'Практика': 'Prática',
-      'Игры для вечеринки': 'Festa',
-      'Симуляторы выживания': 'Sobrevivência',
-      'Социальные приложения': 'Social',
-      'Образ жизни': 'Estilo de Vida',
-      'Творчество и дизайн': 'Criação e Design',
-      'Производительность': 'Produtividade',
-      'Медиа и трансляции': 'Mídia e Transmissão',
-      'Утилиты': 'Utilitários',
-      'Нарративные игры': 'Jogos Narrativos',
-      'Мультипликация': 'Animação',
-      'Семья': 'Família',
-      'Эксперименты': 'Experimentos',
-      'Искусство и творчество': 'Arte e Criatividade',
-      'Образование': 'Educação',
-      'Расслабление и медитация': 'Relaxamento e Meditação',
-      'Полет': 'Voo',
-      'Здоровье и фитнес': 'Saúde e Fitness',
-    };
-    
-    // Split combined tags by comma and translate each part
-    const cleanTag = tag.replace(/\[|\]/g, '').trim();
-    if (cleanTag.includes(',')) {
-      return cleanTag
-        .split(',')
-        .map(part => {
-          const trimmed = part.trim();
-          return tagMap[trimmed] || trimmed;
-        })
-        .join(', ');
-    }
 
-    return tagMap[cleanTag] || cleanTag;
-  };
+
+  useEffect(() => {
+    if (typeFilter === 'baixados' && statusFilter === 'available') {
+      setStatusFilter('');
+    }
+  }, [typeFilter, statusFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, typeFilter, sort, genreFilter, devFilter, limit]);
+  }, [search, typeFilter, sort, genreFilter, devFilter, limit, statusFilter]);
 
   return (
     <div className={`flex flex-col lg:flex-row ${showSidebar ? 'gap-8' : 'gap-0'} transition-all duration-300 relative`}>
@@ -370,6 +320,48 @@ export default function Home() {
               >
                 <Users className="h-4 w-4" />
                 {t('home.sort.seeds')}
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <HardDriveDownload className="h-5 w-5 text-blue-500" /> {t('home.filter.downloadStatus')}
+            </h2>
+            <div className="flex flex-col gap-2">
+              <Button 
+                variant={statusFilter === '' ? 'default' : 'outline'} 
+                className="justify-start gap-2 px-3"
+                onClick={() => setStatusFilter('')}
+              >
+                <Filter className="h-4 w-4" />
+                <span className="truncate">{t('home.filter.all')}</span>
+              </Button>
+              {typeFilter !== 'baixados' && (
+                <Button 
+                  variant={statusFilter === 'available' ? 'default' : 'outline'} 
+                  className="justify-start gap-2 px-3"
+                  onClick={() => setStatusFilter('available')}
+                >
+                  <Globe className="h-4 w-4" />
+                  <span className="truncate">{t('home.filter.available')}</span>
+                </Button>
+              )}
+              <Button 
+                variant={statusFilter === 'downloading' ? 'default' : 'outline'} 
+                className="justify-start gap-2 px-3"
+                onClick={() => setStatusFilter('downloading')}
+              >
+                <Activity className="h-4 w-4" />
+                <span className="truncate">{t('home.filter.downloading')}</span>
+              </Button>
+              <Button 
+                variant={statusFilter === 'installed' ? 'default' : 'outline'} 
+                className="justify-start gap-2 px-3"
+                onClick={() => setStatusFilter('installed')}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                <span className="truncate">{t('home.filter.installed')}</span>
               </Button>
             </div>
           </div>
@@ -775,21 +767,45 @@ export default function Home() {
                       })()}
 
                       <div className="absolute bottom-3 right-3 flex flex-wrap gap-1.5 items-end justify-end z-30 max-w-[80%]">
-                        {((translateMode && game.translated_title ? game.translated_title : game.title).match(/\[.*?\]/g) || []).map((tTag, i) => {
-                          const translated = translateTag(tTag);
-                          if (
-                            translated.toLowerCase() === 'eng' || 
-                            translated.toLowerCase() === 'rus' ||
-                            translated.toLowerCase().includes('meta quest') ||
-                            translated.toLowerCase().includes('vr meta')
-                          ) return null;
-                          
-                          return (
-                            <Badge key={i} className="bg-black/70 backdrop-blur-md text-white border-white/10 text-[9px] px-2 py-0.5 rounded-full uppercase tracking-tighter font-black shadow-lg">
-                              {translated}
-                            </Badge>
-                          );
-                        })}
+                        {(() => {
+                           // 1. Prioritize translated genre from DB
+                           let genreTags: string[] = [];
+                           if (game.genre) {
+                             genreTags = game.genre.split(/[,|/]+/).map(g => g.trim()).filter(g => g);
+                           }
+
+                           // 2. Fallback tag map for markers that Google might miss in the title
+                           const markerMap: Record<string, string> = {
+                             'RUS': 'PT-BR',
+                             'ENG': 'ING',
+                             'РУС': 'PT-BR',
+                             'АНГ': 'ING',
+                             'СИМУЛЯТОРЫ': 'Simuladores',
+                             'ЭКШЕН': 'Ação',
+                             'ШУТЕРЫ': 'Tiro',
+                             'ГОЛОВОЛОМКИ': 'Quebra-cabeça',
+                             'ПРИКЛЮЧЕНЧЕСКИЕ': 'Aventura',
+                             'РОЛЕВЫЕ ИГРЫ': 'RPG',
+                             'АРКАДЫ': 'Arcade'
+                           };
+
+                           // 3. Extract markers from title brackets
+                           const titleTags = ((translateMode && game.translated_title ? game.translated_title : game.title).match(/\[.*?\]/g) || [])
+                             .map(t => t.replace(/[\[\]]/g, '').trim())
+                             .map(t => markerMap[t.toUpperCase()] || t)
+                             .filter(t => {
+                                const tl = t.toLowerCase();
+                                return tl === 'pt-br' || tl === 'ing' || tl === 'quest' || tl === 'pcvr' || tl === 'psvr';
+                             });
+
+                           const allTags = Array.from(new Set([...genreTags, ...titleTags]));
+
+                           return allTags.map((tag, i) => (
+                             <Badge key={i} className="bg-black/70 backdrop-blur-md text-white border-white/10 text-[9px] px-2 py-0.5 rounded-full uppercase tracking-tighter font-black shadow-lg">
+                               {tag}
+                             </Badge>
+                           ));
+                        })()}
                       </div>
                     </div>
                     

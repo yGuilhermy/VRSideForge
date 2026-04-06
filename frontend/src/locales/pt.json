@@ -121,9 +121,13 @@
     "filter": {
       "genre": "Gênero",
       "developer": "Adicionados por",
+      "downloadStatus": "Status de Download",
       "all": "Todos",
       "allGames": "Explorar Tudo",
       "myGames": "Meus Jogos",
+      "available": "Disponível",
+      "downloading": "Baixando",
+      "installed": "Instalado",
       "wishlist": "Lista de Desejos"
     },
     "sidebar": {
@@ -407,7 +411,7 @@
     "info": "Informações",
     "legal": "Aviso Legal",
     "poweredBy": "Powered by ADB",
-    "beta": "Beta 0.1.6!",
+    "beta": "Beta 0.1.7!",
     "copyright": "Todos os direitos reservados",
     "madeWith": "Feito com",
     "forEnthusiasts": "para entusiastas de Realidade Virtual"

@@ -120,10 +120,14 @@
     },
     "filter": {
       "genre": "Genre",
-      "developer": "Added by",
+      "developer": "Developed by",
+      "downloadStatus": "Download Status",
       "all": "All",
       "allGames": "Explore Everything",
       "myGames": "My Games",
+      "available": "Available",
+      "downloading": "Downloading",
+      "installed": "Installed",
       "wishlist": "Wishlist"
     },
     "sidebar": {
@@ -407,7 +411,7 @@
     "info": "Information",
     "legal": "Legal Disclaimer",
     "poweredBy": "Powered by ADB",
-    "beta": "Beta 0.1.6",
+    "beta": "Beta 0.1.7",
     "copyright": "All rights reserved",
     "madeWith": "Made with",
     "forEnthusiasts": "for Virtual Reality enthusiasts"
