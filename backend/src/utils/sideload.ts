@@ -187,10 +187,12 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
 }
 
 async function sideloadApkWithRetry(apkPath: string, pkg: string, deviceId: string | undefined, lang: string, onProgress: (msg: string, percent: number, speed?: number, eta?: number) => void) {
-  // ADB Install doesn't give granular bytes, but we can track time if we used -p (push progress) 
-  // However, for consistency with Rookie, we use percent as units. 
-  // We can't really get speed during install unless we stream the APK ourselves.
-  let result = await installApp(apkPath, deviceId);
+
+  const installProgressHandler = (percent: number, speed?: number, eta?: number) => {
+    onProgress(getMsg('installingNew', lang), percent, speed, eta);
+  };
+
+  let result = await installApp(apkPath, deviceId, installProgressHandler);
   let reinstalled = false;
 
   if (!result.success) {
@@ -214,7 +216,7 @@ async function sideloadApkWithRetry(apkPath: string, pkg: string, deviceId: stri
       await uninstallApp(pkg, deviceId);
 
       onProgress(getMsg('installingNew', lang), 50);
-      const secondTry = await installApp(apkPath, deviceId);
+      const secondTry = await installApp(apkPath, deviceId, installProgressHandler);
       
       if (secondTry.success) {
         reinstalled = true;

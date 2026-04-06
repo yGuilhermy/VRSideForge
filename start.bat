@@ -19,6 +19,11 @@ echo.
 echo [1/1] Starting VRSideForge...
 echo.
 
+:: Clear Next.js cache to ensure portability across different paths
+if exist "frontend\.next" (
+    rmdir /s /q "frontend\.next"
+)
+
 :: Try to run dev
 call npm run dev
 

@@ -128,22 +128,89 @@ export const runAdbCommand = async (command: string, deviceId?: string) => {
   return { stdout, stderr };
 };
 
-export const installApp = async (apkPath: string, deviceId?: string) => {
-  const cmd = await getAdbCommand();
-  const deviceFlag = deviceId ? `-s ${deviceId}` : '';
+export const installApp = async (
+  apkPath: string, 
+  deviceId?: string,
+  onProgress?: (percent: number, speed?: number, eta?: number) => void
+) => {
+  const cmdRaw = await getAdbCommand();
+  const cmd = cmdRaw.replace(/"/g, ''); // Remove quotes for spawn
+  const deviceFlag = deviceId ? ['-s', deviceId] : [];
   const absoluteApkPath = path.resolve(apkPath);
   
+  // 1. Generate a temporary remote name (no spaces)
+  const remoteTempPath = `/data/local/tmp/temp_install_${Date.now()}.apk`;
+
+  // Get APK size for ETA calculation
+  let totalBytes = 100;
   try {
-    // We add -r (reinstall) and -g (grant permissions)
-    const { stdout, stderr } = await execAsync(`${cmd} ${deviceFlag} install -r -g "${absoluteApkPath}"`);
-    return { success: stdout.includes('Success'), stdout, stderr };
-  } catch (e: any) {
-    return { 
-      success: false, 
-      stdout: e.stdout || '', 
-      stderr: e.stderr || e.message 
+    totalBytes = fs.statSync(absoluteApkPath).size;
+  } catch (e) { }
+
+  const eta = new EtaEstimator(0.1, 0.2);
+
+  // 2. Push APK to device
+  const pushOutput = await new Promise<string>((resolve, reject) => {
+    const args = [...deviceFlag, 'push', absoluteApkPath, remoteTempPath];
+    const child = spawn(cmd, args);
+    let output = '';
+
+    const handleOutput = (data: any) => {
+      const chunk = data.toString();
+      output += chunk;
+      
+      const match = chunk.match(/\[\s*(\d+)%\]/);
+      if (match && onProgress) {
+        const percent = parseInt(match[1]);
+        // Cap percent at 99 during push, since install phase takes time
+        const displayPercent = Math.min(99, percent);
+        const doneUnits = (percent / 100) * totalBytes;
+        eta.update(totalBytes, doneUnits);
+        
+        onProgress(displayPercent, eta.getSpeed(), eta.getDisplayEta() || 0);
+      }
     };
+
+    child.stdout.on('data', handleOutput);
+    child.stderr.on('data', handleOutput);
+
+    child.on('close', (code) => {
+      if (code === 0 && !output.includes('error:')) {
+        resolve(output);
+      } else {
+        reject(new Error(`Failed to push APK: \n${output}`));
+      }
+    });
+
+    child.on('error', (err) => reject(err));
+  }).catch(e => e.message);
+
+  if (typeof pushOutput === 'string' && (pushOutput.includes('error:') || pushOutput.includes('Failed to push APK'))) {
+    return { success: false, stdout: '', stderr: pushOutput };
   }
+
+  // Set progress to 99% during the install command execution (it freezes here naturally)
+  if (onProgress) {
+    onProgress(99, 0, 0); 
+  }
+
+  // 3. Install APK using pm install. Safe from quote stripping because there are no spaces in remoteTempPath
+  const { stdout, stderr } = await runAdbCommand(`shell pm install -r -g ${remoteTempPath}`, deviceId);
+
+  const isSuccess = stdout.includes('Success');
+
+  // 4. Cleanup temp file
+  await runAdbCommand(`shell rm ${remoteTempPath}`, deviceId).catch(() => {});
+
+  if (isSuccess && onProgress) {
+    onProgress(100, 0, 0);
+  }
+
+  return { 
+    success: isSuccess, 
+    stdout, 
+    stderr 
+  };
 };
 
 export const pushObb = async (

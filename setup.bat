@@ -144,6 +144,13 @@ if not exist "!NEXT_BIN!" (
 )
 
 echo.
+:: Clear Next.js cache to avoid path mismatch when moving folders
+if exist "frontend\.next" (
+    echo Clearing Next.js cache for a clean setup...
+    rmdir /s /q "frontend\.next"
+    echo OK!
+)
+
 echo ==========================================
 echo    Installation Completed Successfully!
 echo    Use start.bat to run the project.

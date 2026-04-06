@@ -152,6 +152,12 @@ else
 fi
 
 echo
+# Clear Next.js cache to avoid path mismatch when moving folders
+if [ -d "frontend/.next" ]; then
+  echo "Clearing Next.js cache for a clean setup..."
+  rm -rf "frontend/.next"
+  echo "OK!"
+fi
 
 echo "=========================================="
 echo "   Installation Completed Successfully!"
