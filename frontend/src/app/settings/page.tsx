@@ -308,7 +308,7 @@ export default function Settings() {
           <CardFooter className="border-t border-border/50 pt-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <div className="flex items-center gap-2">
                <Zap className="h-4 w-4 text-primary" />
-               <span className="text-sm font-medium">Software: v0.1.7</span>
+               <span className="text-sm font-medium">Software: v0.1.8</span>
             </div>
             <Button 
               variant="outline" 

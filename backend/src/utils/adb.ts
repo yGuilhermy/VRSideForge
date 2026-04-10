@@ -131,23 +131,16 @@ export const runAdbCommand = async (command: string, deviceId?: string) => {
 export const installApp = async (
   apkPath: string, 
   deviceId?: string,
-  onProgress?: (percent: number, speed?: number, eta?: number) => void
+  onStep?: (step: number) => void
 ) => {
   const cmdRaw = await getAdbCommand();
   const cmd = cmdRaw.replace(/"/g, ''); // Remove quotes for spawn
   const deviceFlag = deviceId ? ['-s', deviceId] : [];
   const absoluteApkPath = path.resolve(apkPath);
   
-  // 1. Generate a temporary remote name (no spaces)
   const remoteTempPath = `/data/local/tmp/temp_install_${Date.now()}.apk`;
-
-  // Get APK size for ETA calculation
-  let totalBytes = 100;
-  try {
-    totalBytes = fs.statSync(absoluteApkPath).size;
-  } catch (e) { }
-
-  const eta = new EtaEstimator(0.1, 0.2);
+  if (onStep) onStep(1);
+  console.log(`[ADB] Step 1/3: Pushing APK to ${remoteTempPath}`);
 
   // 2. Push APK to device
   const pushOutput = await new Promise<string>((resolve, reject) => {
@@ -156,19 +149,7 @@ export const installApp = async (
     let output = '';
 
     const handleOutput = (data: any) => {
-      const chunk = data.toString();
-      output += chunk;
-      
-      const match = chunk.match(/\[\s*(\d+)%\]/);
-      if (match && onProgress) {
-        const percent = parseInt(match[1]);
-        // Cap percent at 99 during push, since install phase takes time
-        const displayPercent = Math.min(99, percent);
-        const doneUnits = (percent / 100) * totalBytes;
-        eta.update(totalBytes, doneUnits);
-        
-        onProgress(displayPercent, eta.getSpeed(), eta.getDisplayEta() || 0);
-      }
+      output += data.toString();
     };
 
     child.stdout.on('data', handleOutput);
@@ -189,10 +170,8 @@ export const installApp = async (
     return { success: false, stdout: '', stderr: pushOutput };
   }
 
-  // Set progress to 99% during the install command execution (it freezes here naturally)
-  if (onProgress) {
-    onProgress(99, 0, 0); 
-  }
+  if (onStep) onStep(2);
+  console.log(`[ADB] Step 2/3: Installing package from ${remoteTempPath}`);
 
   // 3. Install APK using pm install. Safe from quote stripping because there are no spaces in remoteTempPath
   const { stdout, stderr } = await runAdbCommand(`shell pm install -r -g ${remoteTempPath}`, deviceId);
@@ -200,11 +179,11 @@ export const installApp = async (
   const isSuccess = stdout.includes('Success');
 
   // 4. Cleanup temp file
+  if (onStep) onStep(3);
+  console.log(`[ADB] Step 3/3: Cleaning up ${remoteTempPath}`);
   await runAdbCommand(`shell rm ${remoteTempPath}`, deviceId).catch(() => {});
 
-  if (isSuccess && onProgress) {
-    onProgress(100, 0, 0);
-  }
+  // Done
 
   return { 
     success: isSuccess, 
@@ -217,7 +196,7 @@ export const pushObb = async (
   obbDir: string, 
   pkg: string, 
   deviceId?: string, 
-  onProgress?: (percent: number, speed?: number, eta?: number) => void
+  onStep?: (step: number) => void
 ) => {
   const cmdRaw = await getAdbCommand();
   const cmd = cmdRaw.replace(/"/g, ''); // Remove quotes for spawn
@@ -227,29 +206,8 @@ export const pushObb = async (
   const absoluteObbDir = path.resolve(obbDir);
   const targetPath = (targetParent + pkg).replace(/\\/g, '/'); // Ensure forward slashes for Android
   
-  // Get folder size for ETA calculation
-  let totalBytes = 100; // units are percentage by default
-  const getDirSize = (dir: string): number => {
-    let size = 0;
-    const items = fs.readdirSync(dir, { withFileTypes: true });
-    for (const item of items) {
-      const fullPath = path.join(dir, item.name);
-      if (item.isDirectory()) {
-        size += getDirSize(fullPath);
-      } else {
-        size += fs.statSync(fullPath).size;
-      }
-    }
-    return size;
-  };
-
-  try {
-    totalBytes = getDirSize(absoluteObbDir);
-  } catch (e: any) {
-    console.warn(`[ADB] Could not calculate OBB dir size: ${e.message}`);
-  }
-
-  const eta = new EtaEstimator(0.1, 0.2);
+  if (onStep) onStep(1);
+  console.log(`[ADB] Step 1/2: Pushing OBB to device...`);
 
   // Clean up existing OBB directory and recreate it (Rookie way)
   try {
@@ -267,17 +225,7 @@ export const pushObb = async (
     let output = '';
 
     child.stdout.on('data', (data) => {
-      const chunk = data.toString();
-      output += chunk;
-      
-      const match = chunk.match(/(\d+)%/);
-      if (match && onProgress) {
-        const percent = parseInt(match[1]);
-        const doneUnits = (percent / 100) * totalBytes;
-        eta.update(totalBytes, doneUnits);
-        
-        onProgress(percent, eta.getSpeed(), eta.getDisplayEta() || 0);
-      }
+      output += data.toString();
     });
 
     child.stderr.on('data', (data) => {
@@ -286,6 +234,8 @@ export const pushObb = async (
 
     child.on('close', (code) => {
       if (code === 0) {
+        if (onStep) onStep(2);
+        console.log(`[ADB] Step 2/2: OBB Pushed. Verifying.`);
         resolve(output);
       } else {
         reject(new Error(`ADB push failed with code ${code}. Output: ${output}`));

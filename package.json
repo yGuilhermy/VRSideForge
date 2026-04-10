@@ -1,6 +1,6 @@
 {
   "name": "vrsideforge",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Um aplicativo fullstack (backend + frontend) para indexar, organizar e traduzir itens VR do fórum (rutracker.org).",
   "main": "index.js",
   "scripts": {

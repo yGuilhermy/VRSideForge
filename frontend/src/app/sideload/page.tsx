@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import { io } from 'socket.io-client';
 import api from '@/lib/api';
 import { useStore } from '@/store/useStore';
@@ -38,47 +39,56 @@ export default function SideloadPage() {
     current: number, 
     total: number, 
     percent: number, 
+    step?: number,
     name?: string, 
     message?: string,
-    speed?: number,
-    eta?: number 
+    completed?: boolean,
+    assetType?: 'apk' | 'obb'
   } | null>(null);
   const [finishedItem, setFinishedItem] = useState<{ name: string, success: boolean } | null>(null);
   const { downloadPath } = useStore();
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const socket = io({
+    const socketUrl = `${window.location.protocol}//${window.location.hostname}:4000`;
+    console.log(`[Socket] Connecting to ${socketUrl}...`);
+    const socket = io(socketUrl, {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
     });
 
     socket.on('connect', () => {
-      console.log('[Socket] Connected to backend');
+      console.log('[Socket] Connected to backend on port 4000');
     });
 
     socket.on('adb_event', (data: any) => {
       console.log('[ADB Socket Event Received]', data);
       
       if (data.type === 'progress') {
-        if (data.total !== undefined && data.current !== undefined) {
            setInstallProgress({ 
              total: data.total, 
              current: data.current, 
-             percent: data.percent ?? 0,
+             percent: 0,
+             step: data.step,
              name: data.currentName,
              message: data.message,
-             speed: data.speed,
-             eta: data.eta
+             assetType: data.assetType
            });
-        } else {
-           toast.info(data.message);
-        }
+           if (data.message) toast.info(data.message);
       } else if (data.type === 'finished') {
         const itemName = data.folderPath ? data.folderPath.split(/[\\/]/).pop() : t('common.app');
         setInstallingFolder(null);
-        setInstallProgress(null);
-        setFinishedItem({ name: itemName || t('common.app'), success: data.success });
+        
+        if (data.success) {
+          // Mark as completed but keep visible for 5s
+          setInstallProgress(prev => prev ? { ...prev, completed: true, step: 3 } : null);
+          setTimeout(() => {
+            setInstallProgress(null);
+          }, 5000);
+        } else {
+          setInstallProgress(null);
+          setFinishedItem({ name: itemName || t('common.app'), success: false });
+        }
         
         if (data.success) {
           toast.success(t('sideload.install.installed'));
@@ -178,6 +188,7 @@ export default function SideloadPage() {
         current: 0, 
         percent: 0, 
         name: folderName, 
+        step: 1,
         message: t('sideload.install.waiting') 
       });
 
@@ -187,7 +198,7 @@ export default function SideloadPage() {
       return res.data;
     },
     onSuccess: () => {
-      toast.success(t('sideload.install.installed'));
+      // toast.success(t('sideload.install.installed')); // Removido: agora via socket
       queryClient.invalidateQueries({ queryKey: ['adb-apps', selectedDevice] });
     },
     onError: (error: any) => {
@@ -236,45 +247,82 @@ const scanMutation = useMutation({
       </div>
       
       {/* Barra de Progresso Global Flutuante */}
-      {installProgress && (
-        <div className="fixed bottom-6 right-6 z-50 w-[350px] animate-in slide-in-from-right-8 duration-500">
-          <Card className="border-primary/50 bg-card/95 backdrop-blur-md shadow-2xl shadow-primary/20 border-2">
-            <CardContent className="pt-5 pb-5 space-y-4">
-              <div className="flex justify-between items-start">
-                <div className="space-y-1 overflow-hidden">
-                  <span className="text-xs font-bold text-indigo-400 flex items-center gap-2 uppercase tracking-wider">
-                     <PackageSearch className="h-3.5 w-3.5" />
-                     {installProgress.message || t('sideload.install.installing')}
-                  </span>
-                  <p className="text-[11px] text-muted-foreground font-mono truncate" title={installProgress.name || installingFolder || ''}>
-                    {installProgress.name || installingFolder}
-                  </p>
+      <AnimatePresence>
+        {installProgress && (
+          <motion.div 
+            initial={{ opacity: 0, x: -50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -100, scale: 0.8, transition: { duration: 0.5 } }}
+            className="fixed bottom-6 left-6 z-50 w-[350px]"
+          >
+            <Card className={`backdrop-blur-md shadow-2xl transition-all duration-500 border-2 ${
+              installProgress.completed 
+                ? 'border-emerald-500/50 bg-emerald-500/10 shadow-emerald-500/20' 
+                : 'border-primary/50 bg-card/95 shadow-primary/20'
+            }`}>
+              <CardContent className="pt-5 pb-5 space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1 overflow-hidden">
+                    <span className={`text-xs font-bold flex items-center gap-2 uppercase tracking-wider ${
+                      installProgress.completed ? 'text-emerald-400' : 'text-indigo-400'
+                    }`}>
+                       {installProgress.completed ? <CheckCircle2 className="h-3.5 w-3.5" /> : <PackageSearch className="h-3.5 w-3.5" />}
+                       {installProgress.completed 
+                         ? t('sideload.install.finishedTitle') 
+                         : (installProgress.assetType === 'obb' ? t('sideload.install.copying') : (installProgress.message || t('sideload.install.installing')))
+                       }
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-mono truncate" title={installProgress.name || installingFolder || ''}>
+                      {installProgress.name || installingFolder}
+                    </p>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 -mr-2 -mt-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setInstallProgress(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6 -mr-2 -mt-2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setInstallProgress(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-[10px] font-bold">
-                   <span className="text-indigo-400/80">{Math.round(((installProgress.current + (installProgress.percent / 100)) / installProgress.total) * 100)}%</span>
-                   <span className="text-muted-foreground">{installProgress.current + 1} / {installProgress.total}</span>
+                <div className="space-y-2">
+                  <div className="flex flex-col gap-1">
+                      {installProgress.completed ? (
+                        <span className="text-lg font-black text-emerald-400 drop-shadow-sm animate-pulse">
+                          {t('sideload.install.installed')}
+                        </span>
+                      ) : installProgress.step && (
+                        <span className="text-lg font-black text-indigo-400 drop-shadow-sm">
+                          {(() => {
+                            if (installProgress.assetType === 'obb') {
+                              if (installProgress.step === 1) {
+                                // If it's a second OBB or more (not 1/total), we can use the specialized label if desired
+                                // But simple logic: if current > 0 then it's at least the second asset.
+                                // However, user specifically asked for "second OBB" logic if possible.
+                                return t('sideload.install.phase1Obb');
+                              }
+                              return t('sideload.install.phase2').replace('3', '2'); // Fase 2/2
+                            }
+                            return t(`sideload.install.phase${installProgress.step}`);
+                          })()}
+                        </span>
+                      )}
+                   </div>
+                   <div className="flex justify-between items-center text-[10px] font-bold text-muted-foreground pt-1">
+                      <span>
+                        {installProgress.assetType === 'obb' ? t('sideload.install.obb') : t('common.app')} {installProgress.current + 1} / {installProgress.total}
+                      </span>
+                      {installProgress.completed && (
+                        <span className="text-emerald-500 animate-bounce">Syncing...</span>
+                      )}
+                   </div>
                 </div>
-                <Progress value={((installProgress.current + (installProgress.percent / 100)) / installProgress.total) * 100} className="h-2.5" />
-                <div className="flex justify-between items-center text-[10px] text-muted-foreground font-mono px-0.5">
-                  <span className="text-emerald-400 font-bold">{formatSpeed(installProgress.speed)}</span>
-                  <span>{installProgress.eta ? t('sideload.install.remainingCounter').replace('{{time}}', formatEta(installProgress.eta)) : ''}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Aviso Extra de Conclusão */}
       <AlertDialog open={!!finishedItem} onOpenChange={(open) => !open && setFinishedItem(null)}>

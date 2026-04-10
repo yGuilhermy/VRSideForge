@@ -62,6 +62,9 @@ const getMsg = (key: string, lang: string = 'en', data?: any) => {
   return msg;
 };
 
+let currentObbCountForAsset = 0; // Helper to track OBBs in current session potentially? 
+// No, let's just use the index.
+
 /**
  * Replicates the "SideForge" sideloading logic: 
  * - Recursive discovery
@@ -71,10 +74,11 @@ const getMsg = (key: string, lang: string = 'en', data?: any) => {
  */
 export async function performSideForgeSideload(targetPath: string, deviceId?: string, lang: string = 'en'): Promise<SideloadResult> {
   const absolutePath = path.resolve(targetPath);
+  console.log(`[SIDEFORGE] Starting sideload pipeline for: ${absolutePath}`);
   const installLog: any[] = [];
   const obbLog: any[] = [];
   
-  const emitProgress = (msg: string, percent: number = 0, currentName?: string, total: number = 1, current: number = 0, speed?: number, eta?: number) => {
+  const emitProgress = (msg: string, step: number = 1, currentName?: string, total: number = 1, current: number = 0, assetType: 'apk' | 'obb' = 'apk') => {
     io.emit('adb_event', { 
       type: 'progress', 
       message: msg, 
@@ -82,9 +86,8 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
       currentName,
       total,
       current,
-      percent,
-      speed,
-      eta
+      step,
+      assetType
     });
   };
 
@@ -95,16 +98,16 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
     if (stat.isFile()) {
       if (absolutePath.endsWith('.apk')) {
         const pkg = await getApkPackageName(absolutePath) || path.basename(absolutePath, '.apk');
-        emitProgress(getMsg('installingApk', lang, { apk: path.basename(absolutePath) }), 10, path.basename(absolutePath), 1, 0);
-        const res = await sideloadApkWithRetry(absolutePath, pkg, deviceId, lang, (m: string, p: number, s?: number, e?: number) => emitProgress(m, p, path.basename(absolutePath), 1, 0, s, e));
+        emitProgress(getMsg('installingApk', lang, { apk: path.basename(absolutePath) }), 1, path.basename(absolutePath), 1, 0, 'apk');
+        const res = await sideloadApkWithRetry(absolutePath, pkg, deviceId, lang, (msg, step) => emitProgress(msg, step, path.basename(absolutePath), 1, 0, 'apk'));
         installLog.push({ apk: path.basename(absolutePath), success: res.success, reinstalled: res.reinstalled });
         
         // Check for OBB in the same folder
         const parentDir = path.dirname(absolutePath);
         const potentialObbDir = path.join(parentDir, pkg);
         if (fs.existsSync(potentialObbDir) && fs.statSync(potentialObbDir).isDirectory()) {
-          emitProgress(getMsg('pushingCompanion', lang, { pkg }), 0, pkg);
-          const obbSuccess = await pushObbSafe(potentialObbDir, pkg, deviceId, lang, (m: string, p: number, s?: number, e?: number) => emitProgress(m, p, pkg, 1, 0, s, e));
+          emitProgress(getMsg('pushingCompanion', lang, { pkg }), 1, pkg, 1, 0, 'obb');
+          const obbSuccess = await pushObbSafe(potentialObbDir, pkg, deviceId, lang, (msg, step) => emitProgress(msg, step, pkg, 1, 0, 'obb'));
           obbLog.push({ pkg, success: obbSuccess });
         }
       } else if (absolutePath.endsWith('.obb')) {
@@ -113,18 +116,18 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
         const pkgMatch = filename.match(/(?:main|patch)\.\d+\.(.+)\.obb$/);
         const pkg = pkgMatch ? pkgMatch[1] : filename.replace('.obb', '');
         
-        emitProgress(getMsg('pushingLoneObb', lang, { pkg }), 0, pkg);
+        emitProgress(getMsg('pushingLoneObb', lang, { pkg }), 1, pkg, 1, 0, 'obb');
         const tempDir = path.join(path.dirname(absolutePath), `_temp_obb_${pkg}`);
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
         fs.copyFileSync(absolutePath, path.join(tempDir, filename));
         
-        const obbSuccess = await pushObbSafe(tempDir, pkg, deviceId, lang, (m: string, p: number, s?: number, e?: number) => emitProgress(m, p, pkg, 1, 0, s, e));
+        const obbSuccess = await pushObbSafe(tempDir, pkg, deviceId, lang, (msg, step) => emitProgress(msg, step, pkg, 1, 0, 'obb'));
         obbLog.push({ pkg, success: obbSuccess });
         
         fs.unlinkSync(path.join(tempDir, filename));
         fs.rmdirSync(tempDir);
       } else if (path.basename(absolutePath) === 'install.txt' || absolutePath.endsWith('.txt')) {
-        const success = await runInstallTxt(absolutePath, deviceId, lang, emitProgress);
+        const success = await runInstallTxt(absolutePath, deviceId, lang, (msg, step) => emitProgress(msg, step));
         installLog.push({ apk: 'install.txt', success });
       }
     } 
@@ -133,8 +136,7 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
       const items = fs.readdirSync(absolutePath);
       
       if (items.includes('install.txt')) {
-        emitProgress(getMsg('runningCustom', lang), 0);
-        await runInstallTxt(path.join(absolutePath, 'install.txt'), deviceId, lang, emitProgress);
+        await runInstallTxt(path.join(absolutePath, 'install.txt'), deviceId, lang, (msg, step) => emitProgress(msg, step));
       }
 
       const { apks, obbs } = findSideloadAssets(absolutePath);
@@ -144,15 +146,16 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
       for (const apk of apks) {
         const pkg = await getApkPackageName(apk) || path.basename(apk, '.apk');
         const filename = path.basename(apk);
-        emitProgress(getMsg('installingApk', lang, { apk: filename }), 0, filename, total, currentIdx);
-        const res = await sideloadApkWithRetry(apk, pkg, deviceId, lang, (msg: string, p: number, speed?: number, eta?: number) => emitProgress(msg, p, filename, total, currentIdx, speed, eta));
+        console.log(`[SIDEFORGE] Processing asset ${currentIdx + 1}/${total}: ${filename} (${pkg})`);
+        emitProgress(getMsg('installingApk', lang, { apk: filename }), 1, filename, total, currentIdx, 'apk');
+        const res = await sideloadApkWithRetry(apk, pkg, deviceId, lang, (msg, step) => emitProgress(msg, step, filename, total, currentIdx, 'apk'));
         installLog.push({ apk: filename, success: res.success, reinstalled: res.reinstalled });
         currentIdx++;
 
         const matchingObb = obbs.find(o => path.basename(o) === pkg);
         if (matchingObb) {
-          emitProgress(getMsg('pushingObb', lang, { pkg }), 0, pkg, total, currentIdx);
-          const obbSuccess = await pushObbSafe(matchingObb, pkg, deviceId, lang, (msg: string, p: number, speed?: number, eta?: number) => emitProgress(msg, p, pkg, total, currentIdx, speed, eta));
+          emitProgress(getMsg('pushingObb', lang, { pkg }), 1, pkg, total, currentIdx, 'obb');
+          const obbSuccess = await pushObbSafe(matchingObb, pkg, deviceId, lang, (msg, step) => emitProgress(msg, step, pkg, total, currentIdx, 'obb'));
           obbLog.push({ pkg, success: obbSuccess });
           const idx = obbs.indexOf(matchingObb);
           obbs.splice(idx, 1);
@@ -162,8 +165,8 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
 
       for (const obb of obbs) {
         const pkg = path.basename(obb);
-        emitProgress(getMsg('pushingLooseObb', lang, { pkg }), 0, pkg, total, currentIdx);
-        const obbSuccess = await pushObbSafe(obb, pkg, deviceId, lang, (msg: string, p: number, speed?: number, eta?: number) => emitProgress(msg, p, pkg, total, currentIdx, speed, eta));
+        emitProgress(getMsg('pushingLooseObb', lang, { pkg }), 1, pkg, total, currentIdx, 'obb');
+        const obbSuccess = await pushObbSafe(obb, pkg, deviceId, lang, (msg, step) => emitProgress(msg, step, pkg, total, currentIdx, 'obb'));
         obbLog.push({ pkg, success: obbSuccess });
         currentIdx++;
       }
@@ -189,8 +192,8 @@ export async function performSideForgeSideload(targetPath: string, deviceId?: st
 
 async function sideloadApkWithRetry(apkPath: string, pkg: string, deviceId: string | undefined, lang: string, onProgress: (msg: string, percent: number, speed?: number, eta?: number) => void) {
 
-  const installProgressHandler = (percent: number, speed?: number, eta?: number) => {
-    onProgress(getMsg('installingNew', lang), percent, speed, eta);
+  const installProgressHandler = (step: number) => {
+    onProgress('', step);
   };
 
   let result = await installApp(apkPath, deviceId, installProgressHandler);
@@ -205,24 +208,24 @@ async function sideloadApkWithRetry(apkPath: string, pkg: string, deviceId: stri
       errorMsg.includes('insufficient_storage');
 
     if (isReinstallEligible) {
-      onProgress(getMsg('reinstalling', lang), 0);
+      onProgress(getMsg('reinstalling', lang), 1);
       
       const backupPath = path.join(path.dirname(apkPath), `_backup_${pkg}`);
-      onProgress(getMsg('backingUp', lang), 10);
+      onProgress(getMsg('backingUp', lang), 1);
       try {
         await pullPath(`/sdcard/Android/data/${pkg}`, backupPath, deviceId);
       } catch (e) {}
 
-      onProgress(getMsg('uninstalling', lang), 30);
+      onProgress(getMsg('uninstalling', lang), 1);
       await uninstallApp(pkg, deviceId);
 
-      onProgress(getMsg('installingNew', lang), 50);
+      onProgress(getMsg('installingNew', lang), 2);
       const secondTry = await installApp(apkPath, deviceId, installProgressHandler);
       
       if (secondTry.success) {
         reinstalled = true;
         if (fs.existsSync(backupPath)) {
-          onProgress(getMsg('restoring', lang), 80);
+          onProgress(getMsg('restoring', lang), 2);
           await pushPath(backupPath, `/sdcard/Android/data/`, deviceId);
           try {
             fs.rmSync(backupPath, { recursive: true, force: true });
@@ -240,8 +243,8 @@ async function sideloadApkWithRetry(apkPath: string, pkg: string, deviceId: stri
 
 async function pushObbSafe(obbDir: string, pkg: string, deviceId: string | undefined, lang: string, onProgress: (msg: string, percent: number, speed?: number, eta?: number) => void) {
   try {
-    await pushObb(obbDir, pkg, deviceId, (p, speed, eta) => {
-      onProgress(getMsg('pushingObb', lang), p, speed, eta);
+    await pushObb(obbDir, pkg, deviceId, (step) => {
+      onProgress('', step);
     });
     return true;
   } catch (e) {
@@ -253,21 +256,24 @@ function findSideloadAssets(dir: string) {
   const apks: string[] = [];
   const obbs: string[] = [];
   
-  function recurse(currentDir: string) {
-    const items = fs.readdirSync(currentDir, { withFileTypes: true });
-    for (const item of items) {
-      const fullPath = path.join(currentDir, item.name);
-      if (item.isDirectory()) {
-        if (item.name.includes('.') && !item.name.includes(' ')) {
-          obbs.push(fullPath);
-        } else {
-          recurse(fullPath);
+    function recurse(currentDir: string) {
+      const items = fs.readdirSync(currentDir, { withFileTypes: true });
+      for (const item of items) {
+        const fullPath = path.join(currentDir, item.name);
+        if (item.isDirectory()) {
+          // Check if it's an OBB folder (contains .obb files) or should be recurse
+          const subItems = fs.readdirSync(fullPath);
+          const hasObb = subItems.some(si => si.endsWith('.obb'));
+          if (hasObb) {
+            obbs.push(fullPath);
+          } else {
+            recurse(fullPath);
+          }
+        } else if (item.name.endsWith('.apk')) {
+          apks.push(fullPath);
         }
-      } else if (item.name.endsWith('.apk')) {
-        apks.push(fullPath);
       }
     }
-  }
   
   recurse(dir);
   return { apks, obbs };
@@ -280,7 +286,8 @@ async function runInstallTxt(filePath: string, deviceId: string | undefined, lan
     
     for (let i = 0; i < lines.length; i++) {
       const cmd = lines[i];
-      onProgress(getMsg('customCommand', lang, { current: i + 1, total: lines.length, cmd }), Math.round((i / lines.length) * 100));
+      const step = Math.min(3, Math.max(1, Math.floor((i / lines.length) * 3) + 1));
+      onProgress(getMsg('customCommand', lang, { current: i + 1, total: lines.length, cmd }), step);
       await runAdbCommand(cmd, deviceId);
     }
     return true;

@@ -266,7 +266,7 @@ setInterval(async () => {
           const progress = parseFloat((qbTorrent.progress * 100).toFixed(1));
           
           // Sincroniza nome se estiver pendente (timeout recovery)
-          if ((item.folderName === 'Sincronizando...' || item.folderName === 'Obtendo metadados...') && qbTorrent.name) {
+          if ((item.folderName === 'Syncing...' || item.folderName === 'Obtendo metadados...') && qbTorrent.name) {
             item.folderName = qbTorrent.name;
             changed = true;
           }
@@ -558,7 +558,7 @@ app.get('/api/filesystem/folders', async (req, res) => {
 
   try {
     const targetPath = path.resolve(downloadPath);
-    console.log(`[FS] Reading folders from: ${targetPath}`);
+
     
     if (!fs.existsSync(targetPath)) {
       console.log(`[FS] Path does not exist: ${targetPath}`);
@@ -932,7 +932,7 @@ async function startDownloadInBackend(magnet: string, gameId: number) {
       const inv = getInventory(savepath);
       if (inv.downloads[hash]) {
         inv.downloads[hash].status = 'download';
-        inv.downloads[hash].folderName = 'Sincronizando...';
+        inv.downloads[hash].folderName = 'Syncing...';
         updateInventory(savepath, inv);
       }
       const wtInstance: any = wt.get(hash);
